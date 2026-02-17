@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Refract!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden; background: #0a0a14;
+    font-family: system-ui, -apple-system, sans-serif; color: #e0e0f0;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  #app { width: 100%; height: 100%; position: relative; }
+  #topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: linear-gradient(to bottom, rgba(10,10,20,0.95) 60%, transparent);
+    pointer-events: none;
+  }
+  #topbar > * { pointer-events: auto; }
+  #topbar h1 { font-size: 15px; font-weight: 700; color: #f0c040; letter-spacing: 2px; text-transform: uppercase; font-family: monospace; }
+  #level-badge { font-family: monospace; font-size: 11px; color: #6a6a8a; background: #12121f; padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
+  #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  #toolbox {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: linear-gradient(to top, rgba(10,10,20,0.98) 70%, transparent);
+    padding: 6px 12px 14px;
+  }
+  #toolbox-label { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #6a6a8a; margin-bottom: 6px; font-family: monospace; }
+  #block-tray { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .block-card {
+    flex-shrink: 0; width: 66px; height: 66px; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; cursor: grab; transition: transform 0.15s, opacity 0.2s;
+  }
+  .block-card.rect { background: rgba(100,180,255,0.2); border: 1.5px solid rgba(100,180,255,0.5); }
+  .block-card.tri { background: rgba(120,255,180,0.2); border: 1.5px solid rgba(120,255,180,0.5); }
+  .block-card.used { opacity: 0.25; pointer-events: none; }
+  .block-card svg { width: 28px; height: 28px; }
+  .block-card span { font-size: 8px; font-family: monospace; color: #6a6a8a; }
+  #controls-row { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+  .btn {
+    background: #12121f; border: 1px solid rgba(255,255,255,0.1); color: #e0e0f0;
+    font-family: system-ui, sans-serif; font-size: 12px; padding: 5px 12px; border-radius: 8px; cursor: pointer;
+  }
+  .btn:active { background: rgba(255,255,255,0.08); }
+  #rotate-hint { font-size: 9px; color: #6a6a8a; font-family: monospace; margin-left: auto; }
+  .overlay {
+    display: none; position: absolute; inset: 0; z-index: 50;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px;
+  }
+  .overlay.show { display: flex; }
+  #win-overlay { background: rgba(10,10,20,0.92); }
+  #win-overlay h2 { font-family: monospace; font-size: 26px; color: #40f080; letter-spacing: 3px; }
+  #win-overlay p { color: #6a6a8a; font-size: 13px; text-align: center; max-width: 260px; }
+  .action-btn {
+    margin-top: 10px; background: #f0c040; color: #0a0a14; font-weight: 700; font-size: 14px;
+    padding: 11px 28px; border: none; border-radius: 12px; cursor: pointer;
+    font-family: monospace; letter-spacing: 1px;
+  }
+  #info-overlay { background: rgba(10,10,20,0.96); padding: 28px; }
+  #info-overlay h2 { font-family: monospace; font-size: 18px; color: #f0c040; margin-bottom: 4px; }
+  #info-overlay p { color: #c0c0d8; font-size: 13px; line-height: 1.6; text-align: center; max-width: 300px; }
+  .val { color: #f0c040; font-weight: 700; }
+  #info-overlay .action-btn { font-size: 13px; padding: 10px 24px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar"><h1>Refract!</h1><span id="level-badge">Level 1</span></div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="toolbox">
+    <div id="toolbox-label">Drag blocks onto the board</div>
+    <div id="block-tray"></div>
+    <div id="controls-row">
+      <button class="btn" id="btn-reset">Reset</button>
+      <button class="btn" id="btn-info">Help</button>
+      <span id="rotate-hint">Tap block = rotate</span>
+    </div>
+  </div>
+  <div class="overlay" id="win-overlay">
+    <h2>SOLVED</h2>
+    <p>Light reached the target!</p>
+    <button class="action-btn" id="next-btn">NEXT LEVEL</button>
+  </div>
+  <div class="overlay show" id="info-overlay">
+    <h2>Refract!</h2>
+    <p>Guide a <span class="val">beam of light</span> from the bottom to the <span class="val">target hole</span> on the edge of the screen.</p>
+    <p><span class="val">Drag</span> glass blocks from the tray onto the board. Light bends when entering glass and reflects at steep angles.</p>
+    <p><span class="val">Tap</span> a placed block to rotate it. <span class="val">Double-tap</span> to remove it.</p>
+    <p>Rectangles: n=<span class="val">1.5</span> Prisms: n=<span class="val">1.8</span></p>
+    <button class="action-btn" id="btn-start">START PLAYING</button>
+  </div>
+</div>
+<script>
+(function() {
+  "use strict";
+
+  var canvas = document.getElementById("gameCanvas");
+  var ctx = canvas.getContext("2d");
+  var W, H, dpr;
+  var TOOLBOX_H = 130, TOPBAR_H = 44, HOLE_SIZE = 28;
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    traceLight();
+  }
+  window.addEventListener("resize", resize);
+
+  var currentLevel = 0;
+  var placedBlocks = [];
+  var selectedBlock = null;
+  var dragging = null;
+  var dragOffset = { x: 0, y: 0 };
+  var lightSegments = [];
+  var won = false;
+  var beamSource = { x: 0, y: 0 };
+  var holePos = { x: 0, y: 0, side: "top" };
+  var trayCards = [];
+
+  var BLOCK_DEFS = {
+    rect_s: { type: "rect", w: 65, h: 28, n: 1.5, label: "Rect S" },
+    rect_l: { type: "rect", w: 95, h: 32, n: 1.5, label: "Rect L" },
+    tri_s:  { type: "tri", size: 55, n: 1.8, label: "Prism S" },
+    tri_l:  { type: "tri", size: 80, n: 1.8, label: "Prism L" }
+  };
+
+  var LEVELS = [
+    { beam: 0.5, hole: { side: "right", pos: 0.5 }, blocks: ["tri_s"] },
+    { beam: 0.3, hole: { side: "right", pos: 0.4 }, blocks: ["tri_s", "tri_s"] },
+    { beam: 0.7, hole: { side: "left", pos: 0.35 }, blocks: ["rect_l", "tri_s"] },
+    { beam: 0.5, hole: { side: "left", pos: 0.5 }, blocks: ["tri_s", "rect_s"] },
+    { beam: 0.2, hole: { side: "right", pos: 0.6 }, blocks: ["tri_s", "tri_l", "rect_s"] },
+    { beam: 0.8, hole: { side: "left", pos: 0.4 }, blocks: ["rect_l", "tri_l", "tri_s"] },
+    { beam: 0.35, hole: { side: "right", pos: 0.3 }, blocks: ["tri_l", "tri_l", "rect_s", "rect_l"] },
+    { beam: 0.6, hole: { side: "left", pos: 0.25 }, blocks: ["rect_s", "tri_s", "tri_l", "rect_l"] }
+  ];
+
+  function loadLevel(idx) {
+    currentLevel = idx % LEVELS.length;
+    var lv = LEVELS[currentLevel];
+    won = false;
+    placedBlocks = [];
+    selectedBlock = null;
+    dragging = null;
+    var pb = H - TOOLBOX_H;
+    beamSource = { x: W * lv.beam, y: pb - 2 };
+    var pa = pb - TOPBAR_H;
+    if (lv.hole.side === "top") {
+      holePos = { x: W * lv.hole.pos, y: TOPBAR_H, side: "top" };
+    } else if (lv.hole.side === "left") {
+      holePos = { x: 0, y: TOPBAR_H + pa * lv.hole.pos, side: "left" };
+    } else {
+      holePos = { x: W, y: TOPBAR_H + pa * lv.hole.pos, side: "right" };
+    }
+    document.getElementById("level-badge").textContent = "Level " + (currentLevel + 1);
+    document.getElementById("win-overlay").classList.remove("show");
+    buildTray(lv.blocks);
+    traceLight();
+  }
+
+  function buildTray(keys) {
+    var tray = document.getElementById("block-tray");
+    tray.innerHTML = "";
+    trayCards = [];
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var def = BLOCK_DEFS[key];
+      var card = document.createElement("div");
+      card.className = "block-card " + (def.type === "rect" ? "rect" : "tri");
+      var svgContent;
+      if (def.type === "rect") {
+        svgContent = '<svg viewBox="0 0 32 32"><rect x="4" y="10" width="24" height="12" rx="1.5" fill="rgba(100,180,255,0.35)" stroke="rgba(100,180,255,0.8)" stroke-width="1.5"/></svg>';
+      } else {
+        svgContent = '<svg viewBox="0 0 32 32"><polygon points="16,5 29,27 3,27" fill="rgba(120,255,180,0.35)" stroke="rgba(120,255,180,0.8)" stroke-width="1.5"/></svg>';
+      }
+      card.innerHTML = svgContent + "<span>" + def.label + "</span>";
+      trayCards.push({ el: card, key: key, used: false, blockId: null });
+      tray.appendChild(card);
+    }
+  }
+
+  function markTrayUsed(idx, bid) {
+    if (trayCards[idx]) {
+      trayCards[idx].used = true;
+      trayCards[idx].blockId = bid;
+      trayCards[idx].el.classList.add("used");
+    }
+  }
+
+  function freeTraySlot(bid) {
+    for (var i = 0; i < trayCards.length; i++) {
+      if (trayCards[i].blockId === bid) {
+        trayCards[i].used = false;
+        trayCards[i].blockId = null;
+        trayCards[i].el.classList.remove("used");
+        break;
+      }
+    }
+  }
+
+  // === GEOMETRY ===
+  function rotPt(px, py, cx, cy, a) {
+    var c = Math.cos(a), s = Math.sin(a), dx = px - cx, dy = py - cy;
+    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
+  }
+
+  function getVerts(b) {
+    if (b.type === "rect") {
+      var hw = b.w / 2, hh = b.h / 2;
+      return [
+        rotPt(b.x - hw, b.y - hh, b.x, b.y, b.angle),
+        rotPt(b.x + hw, b.y - hh, b.x, b.y, b.angle),
+        rotPt(b.x + hw, b.y + hh, b.x, b.y, b.angle),
+        rotPt(b.x - hw, b.y + hh, b.x, b.y, b.angle)
+      ];
+    }
+    var h = b.size * Math.sqrt(3) / 2;
+    return [
+      rotPt(b.x, b.y - h * 2 / 3, b.x, b.y, b.angle),
+      rotPt(b.x + b.size / 2, b.y + h / 3, b.x, b.y, b.angle),
+      rotPt(b.x - b.size / 2, b.y + h / 3, b.x, b.y, b.angle)
+    ];
+  }
+
+  function getEdges(b) {
+    var v = getVerts(b);
+    var edges = [];
+    for (var i = 0; i < v.length; i++) {
+      edges.push({ p1: v[i], p2: v[(i + 1) % v.length] });
+    }
+    return edges;
+  }
+
+  function segHit(a1, a2, b1, b2) {
+    var dx1 = a2.x - a1.x, dy1 = a2.y - a1.y;
+    var dx2 = b2.x - b1.x, dy2 = b2.y - b1.y;
+    var den = dx1 * dy2 - dy1 * dx2;
+    if (Math.abs(den) < 1e-12) return null;
+    var t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / den;
+    var u = ((b1.x - a1.x) * dy1 - (b1.y - a1.y) * dx1) / den;
+    if (t > 0.002 && t < 0.998 && u > 0.002 && u < 0.998) {
+      return { x: a1.x + t * dx1, y: a1.y + t * dy1, t: t };
+    }
+    return null;
+  }
+
+  function pip(px, py, verts) {
+    var inside = false;
+    for (var i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+      var xi = verts[i].x, yi = verts[i].y, xj = verts[j].x, yj = verts[j].y;
+      if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  function vNorm(v) {
+    var l = Math.sqrt(v.x * v.x + v.y * v.y);
+    return l > 0 ? { x: v.x / l, y: v.y / l } : { x: 0, y: 0 };
+  }
+
+  function vDot(a, b) { return a.x * b.x + a.y * b.y; }
+
+  function reflectV(d, n) {
+    var dn = vDot(d, n);
+    return { x: d.x - 2 * dn * n.x, y: d.y - 2 * dn * n.y };
+  }
+
+  function refractV(d, n, n1, n2) {
+    var cosI = -vDot(d, n);
+    var nrm = { x: n.x, y: n.y };
+    var ni = n1, nt = n2;
+    if (cosI < 0) {
+      cosI = -cosI;
+      nrm = { x: -nrm.x, y: -nrm.y };
+      ni = n2;
+      nt = n1;
+    }
+    var r = ni / nt;
+    var sinT2 = r * r * (1 - cosI * cosI);
+    if (sinT2 > 1.0) return null;
+    var cosT = Math.sqrt(Math.max(0, 1 - sinT2));
+    return {
+      x: r * d.x + (r * cosI - cosT) * nrm.x,
+      y: r * d.y + (r * cosI - cosT) * nrm.y
+    };
+  }
+
+  // === LIGHT TRACING ===
+  function traceLight() {
+    lightSegments = [];
+    if (!W || !H) return;
+    var pb = H - TOOLBOX_H;
+    var origin = { x: beamSource.x, y: beamSource.y };
+    var dir = { x: 0, y: -1 };
+
+    var walls = [
+      { p1: { x: 0, y: TOPBAR_H }, p2: { x: W, y: TOPBAR_H } },
+      { p1: { x: 0, y: pb }, p2: { x: W, y: pb } },
+      { p1: { x: 0, y: TOPBAR_H }, p2: { x: 0, y: pb } },
+      { p1: { x: W, y: TOPBAR_H }, p2: { x: W, y: pb } }
+    ];
+
+    for (var bounce = 0; bounce < 40; bounce++) {
+      var far = { x: origin.x + dir.x * 3000, y: origin.y + dir.y * 3000 };
+      var best = null, bestDist = Infinity, bestBlock = null, bestEdge = null;
+
+      for (var bi = 0; bi < placedBlocks.length; bi++) {
+        var edges = getEdges(placedBlocks[bi]);
+        for (var ei = 0; ei < edges.length; ei++) {
+          var hit = segHit(origin, far, edges[ei].p1, edges[ei].p2);
+          if (hit) {
+            var d = Math.sqrt((hit.x - origin.x) * (hit.x - origin.x) + (hit.y - origin.y) * (hit.y - origin.y));
+            if (d > 1 && d < bestDist) {
+              bestDist = d; best = hit; bestBlock = placedBlocks[bi]; bestEdge = edges[ei];
+            }
+          }
+        }
+      }
+
+      for (var wi = 0; wi < walls.length; wi++) {
+        var whit = segHit(origin, far, walls[wi].p1, walls[wi].p2);
+        if (whit) {
+          var wd = Math.sqrt((whit.x - origin.x) * (whit.x - origin.x) + (whit.y - origin.y) * (whit.y - origin.y));
+          if (wd > 1 && wd < bestDist) {
+            bestDist = wd; best = whit; bestBlock = null; bestEdge = walls[wi];
+          }
+        }
+      }
+
+      if (!best) {
+        lightSegments.push({ from: origin, to: far, inside: false });
+        break;
+      }
+
+      var probe = { x: origin.x + dir.x * 3, y: origin.y + dir.y * 3 };
+      var insideBlock = null;
+      for (var pi = 0; pi < placedBlocks.length; pi++) {
+        if (pip(probe.x, probe.y, getVerts(placedBlocks[pi]))) {
+          insideBlock = placedBlocks[pi];
+          break;
+        }
+      }
+
+      lightSegments.push({ from: origin, to: best, inside: !!insideBlock });
+
+      if (!bestBlock) break;
+
+      var eDir = vNorm({ x: bestEdge.p2.x - bestEdge.p1.x, y: bestEdge.p2.y - bestEdge.p1.y });
+      var normal = { x: -eDir.y, y: eDir.x };
+      if (vDot(dir, normal) > 0) {
+        normal = { x: -normal.x, y: -normal.y };
+      }
+
+      var entering = !insideBlock || insideBlock.id !== bestBlock.id;
+      var n1 = entering ? 1.0 : bestBlock.n;
+      var n2 = entering ? bestBlock.n : 1.0;
+
+      var refr = refractV(dir, normal, n1, n2);
+      if (refr) {
+        dir = vNorm(refr);
+      } else {
+        dir = vNorm(reflectV(dir, normal));
+      }
+      origin = { x: best.x + dir.x * 1.0, y: best.y + dir.y * 1.0 };
+    }
+
+    checkWin();
+  }
+
+  function checkWin() {
+    if (won) return;
+    if (lightSegments.length === 0) return;
+    var last = lightSegments[lightSegments.length - 1];
+    var e = last.to;
+    var hit = false;
+    if (holePos.side === "top") hit = Math.abs(e.y - holePos.y) < 10 && Math.abs(e.x - holePos.x) < HOLE_SIZE;
+    if (holePos.side === "left") hit = Math.abs(e.x - holePos.x) < 10 && Math.abs(e.y - holePos.y) < HOLE_SIZE;
+    if (holePos.side === "right") hit = Math.abs(e.x - holePos.x) < 10 && Math.abs(e.y - holePos.y) < HOLE_SIZE;
+    if (hit) {
+      won = true;
+      setTimeout(function() {
+        document.getElementById("win-overlay").classList.add("show");
+      }, 500);
+    }
+  }
+
+  // === DRAWING ===
+  function draw(ts) {
+    ctx.clearRect(0, 0, W, H);
+    var pb = H - TOOLBOX_H;
+    var pulse = 0.7 + 0.3 * Math.sin((ts || 0) * 0.003);
+
+    ctx.fillStyle = "#0a0a14";
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid dots
+    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    for (var gx = 20; gx < W; gx += 30) {
+      for (var gy = TOPBAR_H + 20; gy < pb; gy += 30) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Border
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(0.5, TOPBAR_H + 0.5, W - 1, pb - TOPBAR_H - 1);
+
+    // Hole target
+    var hc = won ? "#40f080" : "#f0c040";
+    ctx.save();
+    var grd = ctx.createRadialGradient(holePos.x, holePos.y, 0, holePos.x, holePos.y, HOLE_SIZE * 2.5);
+    grd.addColorStop(0, (won ? "rgba(64,240,128," : "rgba(240,192,64,") + (0.25 * pulse) + ")");
+    grd.addColorStop(1, "transparent");
+    ctx.fillStyle = grd;
+    ctx.fillRect(holePos.x - 80, holePos.y - 80, 160, 160);
+    ctx.strokeStyle = hc;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = hc;
+    ctx.shadowBlur = 14 * pulse;
+    ctx.beginPath();
+    if (holePos.side === "top") {
+      ctx.moveTo(holePos.x - HOLE_SIZE, holePos.y);
+      ctx.lineTo(holePos.x + HOLE_SIZE, holePos.y);
+    } else {
+      ctx.moveTo(holePos.x, holePos.y - HOLE_SIZE);
+      ctx.lineTo(holePos.x, holePos.y + HOLE_SIZE);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = hc;
+    ctx.font = "bold 9px monospace";
+    ctx.textAlign = "center";
+    if (holePos.side === "top") {
+      ctx.fillText("TARGET", holePos.x, holePos.y + 14);
+    } else if (holePos.side === "left") {
+      ctx.save();
+      ctx.translate(holePos.x + 14, holePos.y);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("TARGET", 0, 0);
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.translate(holePos.x - 14, holePos.y);
+      ctx.rotate(Math.PI / 2);
+      ctx.fillText("TARGET", 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Light source
+    ctx.save();
+    var sg = ctx.createRadialGradient(beamSource.x, beamSource.y, 0, beamSource.x, beamSource.y, 20);
+    sg.addColorStop(0, "rgba(240,192,64,0.6)");
+    sg.addColorStop(1, "transparent");
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(beamSource.x, beamSource.y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f0c040";
+    ctx.beginPath();
+    ctx.arc(beamSource.x, beamSource.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = "bold 9px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("LIGHT", beamSource.x, beamSource.y + 18);
+    ctx.restore();
+
+    // Blocks
+    for (var bi = 0; bi < placedBlocks.length; bi++) {
+      var b = placedBlocks[bi];
+      var v = getVerts(b);
+      var isR = b.type === "rect";
+      var sel = selectedBlock && selectedBlock.id === b.id;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(v[0].x, v[0].y);
+      for (var vi = 1; vi < v.length; vi++) ctx.lineTo(v[vi].x, v[vi].y);
+      ctx.closePath();
+
+      var gf = ctx.createLinearGradient(v[0].x, v[0].y, v[v.length - 1].x, v[v.length - 1].y);
+      if (isR) {
+        gf.addColorStop(0, "rgba(100,180,255,0.12)");
+        gf.addColorStop(1, "rgba(100,180,255,0.22)");
+      } else {
+        gf.addColorStop(0, "rgba(120,255,180,0.12)");
+        gf.addColorStop(1, "rgba(120,255,180,0.22)");
+      }
+      ctx.fillStyle = gf;
+      ctx.fill();
+
+      ctx.strokeStyle = sel
+        ? (isR ? "rgba(100,180,255,1)" : "rgba(120,255,180,1)")
+        : (isR ? "rgba(100,180,255,0.45)" : "rgba(120,255,180,0.45)");
+      ctx.lineWidth = sel ? 2.5 : 1.5;
+      if (sel) {
+        ctx.shadowColor = isR ? "rgba(100,180,255,0.5)" : "rgba(120,255,180,0.5)";
+        ctx.shadowBlur = 10;
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.font = "9px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("n=" + b.n, b.x, b.y);
+      ctx.restore();
+    }
+
+    // Light beam
+    ctx.save();
+    for (var si = 0; si < lightSegments.length; si++) {
+      var seg = lightSegments[si];
+      ctx.beginPath();
+      ctx.moveTo(seg.from.x, seg.from.y);
+      ctx.lineTo(seg.to.x, seg.to.y);
+      ctx.strokeStyle = seg.inside ? "rgba(130,200,255,0.85)" : "rgba(240,192,64,0.85)";
+      ctx.lineWidth = seg.inside ? 2 : 2.5;
+      ctx.shadowColor = seg.inside ? "rgba(130,200,255,0.5)" : "rgba(240,192,64,0.5)";
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    for (var di = 1; di < lightSegments.length; di++) {
+      var pt = lightSegments[di].from;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+
+    if (won && lightSegments.length > 0) {
+      var last = lightSegments[lightSegments.length - 1];
+      var ld = vNorm({ x: last.to.x - last.from.x, y: last.to.y - last.from.y });
+      ctx.beginPath();
+      ctx.moveTo(last.to.x, last.to.y);
+      ctx.lineTo(last.to.x + ld.x * 60, last.to.y + ld.y * 60);
+      ctx.strokeStyle = "rgba(64,240,128,0.8)";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "rgba(64,240,128,0.6)";
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    requestAnimationFrame(draw);
+  }
+
+  // === INTERACTION ===
+  var lastTapTime = 0, lastTapBlockId = null;
+
+  function blockAt(x, y) {
+    for (var i = placedBlocks.length - 1; i >= 0; i--) {
+      if (pip(x, y, getVerts(placedBlocks[i]))) return placedBlocks[i];
+    }
+    return null;
+  }
+
+  function hitTrayCard(x, y) {
+    for (var i = 0; i < trayCards.length; i++) {
+      if (trayCards[i].used) continue;
+      var r = trayCards[i].el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+    }
+    return -1;
+  }
+
+  function spawnFromTray(idx, x, y) {
+    var def = BLOCK_DEFS[trayCards[idx].key];
+    var pb = H - TOOLBOX_H;
+    var block = {
+      id: Date.now() + Math.random(),
+      key: trayCards[idx].key,
+      type: def.type,
+      x: x,
+      y: Math.min(y, pb - 40),
+      angle: 0,
+      n: def.n,
+      w: def.w || 0,
+      h: def.h || 0,
+      size: def.size || 0
+    };
+    placedBlocks.push(block);
+    markTrayUsed(idx, block.id);
+    dragging = block;
+    selectedBlock = block;
+    dragOffset = { x: 0, y: 0 };
+    traceLight();
+  }
+
+  function ptrDown(x, y) {
+    if (won) return;
+    var pb = H - TOOLBOX_H;
+
+    var ti = hitTrayCard(x, y);
+    if (ti >= 0) {
+      spawnFromTray(ti, x, y);
+      return;
+    }
+
+    if (y > pb) return;
+
+    var block = blockAt(x, y);
+    if (block) {
+      var now = Date.now();
+      if (lastTapBlockId === block.id && now - lastTapTime < 400) {
+        placedBlocks = placedBlocks.filter(function(b) { return b.id !== block.id; });
+        freeTraySlot(block.id);
+        selectedBlock = null;
+        dragging = null;
+        lastTapBlockId = null;
+        traceLight();
+        return;
+      }
+      lastTapTime = now;
+      lastTapBlockId = block.id;
+
+      if (selectedBlock && selectedBlock.id === block.id && !dragging) {
+        block.angle += Math.PI / 12;
+        traceLight();
+        return;
+      }
+
+      selectedBlock = block;
+      dragging = block;
+      dragOffset = { x: block.x - x, y: block.y - y };
+    } else {
+      selectedBlock = null;
+      lastTapBlockId = null;
+    }
+  }
+
+  function ptrMove(x, y) {
+    if (!dragging) return;
+    var pb = H - TOOLBOX_H;
+    dragging.x = Math.max(10, Math.min(W - 10, x + dragOffset.x));
+    dragging.y = Math.max(TOPBAR_H + 10, Math.min(pb - 10, y + dragOffset.y));
+    traceLight();
+  }
+
+  function ptrUp(x, y) {
+    if (dragging) {
+      var pb = H - TOOLBOX_H;
+      if (y > pb - 10) {
+        placedBlocks = placedBlocks.filter(function(b) { return b.id !== dragging.id; });
+        freeTraySlot(dragging.id);
+        selectedBlock = null;
+        traceLight();
+      }
+    }
+    dragging = null;
+  }
+
+  canvas.addEventListener("touchstart", function(e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    ptrDown(t.clientX, t.clientY);
+  }, { passive: false });
+
+  canvas.addEventListener("touchmove", function(e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    ptrMove(t.clientX, t.clientY);
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", function(e) {
+    e.preventDefault();
+    var t = e.changedTouches[0];
+    ptrUp(t.clientX, t.clientY);
+  }, { passive: false });
+
+  canvas.addEventListener("mousedown", function(e) { ptrDown(e.clientX, e.clientY); });
+  canvas.addEventListener("mousemove", function(e) { if (dragging) ptrMove(e.clientX, e.clientY); });
+  canvas.addEventListener("mouseup", function(e) { ptrUp(e.clientX, e.clientY); });
+
+  var toolbox = document.getElementById("toolbox");
+  toolbox.addEventListener("touchstart", function(e) {
+    var t = e.touches[0];
+    var ti = hitTrayCard(t.clientX, t.clientY);
+    if (ti >= 0) {
+      e.preventDefault();
+      ptrDown(t.clientX, t.clientY);
+    }
+  }, { passive: false });
+
+  toolbox.addEventListener("touchmove", function(e) {
+    if (dragging) {
+      e.preventDefault();
+      var t = e.touches[0];
+      ptrMove(t.clientX, t.clientY);
+    }
+  }, { passive: false });
+
+  toolbox.addEventListener("touchend", function(e) {
+    if (dragging) {
+      e.preventDefault();
+      var t = e.changedTouches[0];
+      ptrUp(t.clientX, t.clientY);
+    }
+  }, { passive: false });
+
+  document.getElementById("btn-reset").addEventListener("click", function() { loadLevel(currentLevel); });
+  document.getElementById("btn-info").addEventListener("click", function() { document.getElementById("info-overlay").classList.add("show"); });
+  document.getElementById("btn-start").addEventListener("click", function() { document.getElementById("info-overlay").classList.remove("show"); });
+  document.getElementById("next-btn").addEventListener("click", function() { loadLevel(currentLevel + 1); });
+
+  resize();
+  loadLevel(0);
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
