@@ -1,0 +1,24 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - claude/markdown-html-vercel-deploy-y2zao8
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel (production)
+        run: vercel deploy --prod --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_nKWowoc6ewqjWzMKWz7vZXYh
+          VERCEL_PROJECT_ID: prj_epP85l6toC8cjT6TCHXr6o3gBuUf
