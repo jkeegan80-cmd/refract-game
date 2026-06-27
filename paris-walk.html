@@ -383,7 +383,7 @@ STOPS.forEach((s,i)=>{
     <div class="stop-body">
       <h3>${s.name}</h3>
       <div class="where">${s.area}</div>
-      <img class="photo" loading="lazy" src="${s.img}" alt="${s.name}" onerror="this.style.display='none'">
+      <img class="photo" loading="lazy" src="" id="img-${i}" alt="${s.name}">
       <div class="infobar">
         <span class="chip status ${st.cls}"><span class="pip"></span>${st.txt}</span>
         <span class="chip">🕑 Sat <b>${hrsTxt}</b></span>
@@ -415,6 +415,45 @@ for(let i=0;i<pts.length-1;i++){
   L.polyline([pts[i],pts[i+1]],{color:ZONES[STOPS[i].z].color,weight:3,opacity:.55,dashArray:'2,8',lineCap:'round'}).addTo(map);
 }
 map.fitBounds(L.latLngBounds(pts).pad(.1));
+
+const WIKIS=[
+  "Medici Fountain",
+  "Jardin du Luxembourg",
+  "Panthéon, Paris",
+  "Notre-Dame de Paris",
+  "Shakespeare and Company (bookshop)",
+  "Rue de Buci",
+  "Café de Flore",
+  "Rue des Saints-Pères, Paris",
+  "Rue de l'Université, Paris",
+  "Pont Alexandre III",
+  "Petit Palais",
+  "Avenue des Champs-Élysées",
+  "Arc de Triomphe",
+  "Louvre",
+  "Bourse de Commerce–Pinault Collection",
+  "Galerie Vivienne",
+  "Bibliothèque nationale de France",
+  "Passage des Panoramas",
+  "Galeries Lafayette",
+  "Palais Garnier",
+  "Moulin Rouge",
+  "La Maison Rose",
+  "Rue de l'Abreuvoir",
+  "Rue du Calvaire (Paris)",
+  "Place du Tertre",
+  "Sacré-Cœur Basilica, Paris"
+];
+WIKIS.forEach(async(w,i)=>{
+  const img=document.getElementById('img-'+i);
+  if(!img||!w)return;
+  try{
+    const r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(w));
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.thumbnail?.source){img.src=d.thumbnail.source.replace(/\/\d+px-/,'/640px-');}
+  }catch(e){}
+});
 </script>
 </body>
 </html>
