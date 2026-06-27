@@ -149,6 +149,7 @@ const zoneIntro=[
 
 const M=(h,m)=>h*60+(m||0);
 const STOPS=[
+  // ---------- LATIN QUARTER / LEFT BANK (afternoon) ----------
   {z:0,name:"Medici Fountain",area:"6e · Jardin du Luxembourg",lat:48.8480667,lng:2.339308,walk:null,
    hours:[M(7,30),M(21,15)],cost:"Free",free:true,
    blurb:"Start in a shaded corner of the Luxembourg gardens, where this early-17th-century fountain feels like a secret grotto. A long, still basin runs up to a sculpted scene of the giant Polyphemus surprising two lovers — a calm place to begin.",
@@ -191,6 +192,7 @@ const STOPS=[
    blurb:"A cosy book-lined coffee house and pâtisserie atelier on Rue des Saints-Pères. A good last Left-Bank pause for a cortado and a madeleine before crossing the river; it also runs hands-on croissant classes in the mornings.",
    fact:"The atelier teaches small-group viennoiserie classes — you eat what you make."},
 
+  // ---------- SEINE / CHAMPS-ÉLYSÉES ----------
   {z:1,name:"Rue de l'Université",area:"7e · Invalides",lat:48.8610269,lng:2.3141312,walk:21,
    hours:null,cost:"Free",free:true,
    blurb:"A long, quiet Left-Bank street whose far end frames the Eiffel Tower between Haussmann façades — one of the city's favourite \"surprise reveal\" views, and your free look at the tower today before tomorrow's climb.",
@@ -218,6 +220,7 @@ const STOPS=[
    fact:"Beneath it lies France's Tomb of the Unknown Soldier, where a flame has been rekindled every evening since 1923.",
    opt:"Rooftop terrace €16 (open to 11pm) · this is your turnaround — from here, head east toward the Louvre"},
 
+  // ---------- LOUVRE / PALAIS-ROYAL / BOULEVARDS ----------
   {z:2,name:"Louvre & Tuileries Garden",area:"1er · Louvre",added:true,lat:48.8606111,lng:2.337644,walk:38,
    hours:[M(7,0),M(22,30)],cost:"Garden free (no interior today)",free:true,
    blurb:"A walk-through, not a visit: stroll the formal Tuileries Garden and the great courtyard around I. M. Pei's glass pyramid. The garden runs late into the evening and is a grand passage through the city's spine. (It's a long leg from the Arc — a Métro hop is sensible.)",
@@ -257,6 +260,7 @@ const STOPS=[
    fact:"The underground reservoir beneath the building inspired the lake in \"The Phantom of the Opera.\"",
    opt:"Interior closed by evening — enjoy the façade as you pass"},
 
+  // ---------- MONTMARTRE (sunset finale) ----------
   {z:3,name:"Moulin Rouge",area:"Pigalle · 18e",added:true,lat:48.8841473,lng:2.3322266,walk:22,
    hours:null,cost:"Façade free · shows from ~€88",
    blurb:"At the foot of the hill spins the red windmill of the world's most famous cabaret, open since 1889 and the birthplace of the modern can-can. A photogenic gateway into Montmartre as the light starts to turn. (Métro Blanche drops you right here.)",
@@ -353,11 +357,11 @@ STOPS.forEach((s,i)=>{
     <div class="stop-body">
       <h3>${s.name}</h3>
       <div class="where">${s.area}</div>
-      <img class="photo" loading="lazy" src="" id="img-${i}" alt="${s.name}">
+      <img class="photo" id="img-${i}" alt="${s.name}">
       <div class="infobar">
         <span class="chip status ${st.cls}"><span class="pip"></span>${st.txt}</span>
         <span class="chip">🕑 Sat <b>${hrsTxt}</b></span>
-        <span class="chip ${costCls}">🏟 <b>${s.cost}</b></span>
+        <span class="chip ${costCls}">🎫 <b>${s.cost}</b></span>
       </div>
       <p class="blurb">${s.blurb}</p>
       <div class="fact ${s.finale?'finale':''}"><b>Good to know</b>${s.fact}</div>
@@ -401,7 +405,7 @@ const WIKIS=[
   "Avenue des Champs-Élysées",
   "Arc de Triomphe",
   "Louvre",
-  "Bourse de Commerce–Pinault Collection",
+  "Bourse de Commerce – Pinault Collection",
   "Galerie Vivienne",
   "Bibliothèque nationale de France",
   "Passage des Panoramas",
@@ -414,19 +418,20 @@ const WIKIS=[
   "Place du Tertre",
   "Sacré-Cœur Basilica, Paris"
 ];
-WIKIS.forEach(async(w,i)=>{
+STOPS.forEach((s,i)=>{
   const img=document.getElementById('img-'+i);
-  if(!img||!w)return;
-  try{
-    const url='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(w)+'&prop=pageimages&format=json&pithumbsize=640&origin=*';
-    const r=await fetch(url);
-    if(!r.ok)return;
-    const d=await r.json();
-    const pages=d.query&&d.query.pages;
-    if(!pages)return;
-    const page=Object.values(pages)[0];
-    if(page&&page.thumbnail&&page.thumbnail.source){img.src=page.thumbnail.source;}
-  }catch(e){}
+  if(!img)return;
+  const w=WIKIS[i];
+  if(!w)return;
+  fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(w)+'&prop=pageimages&format=json&pithumbsize=800&origin=*')
+    .then(r=>r.json())
+    .then(d=>{
+      const pages=d&&d.query&&d.query.pages;
+      if(!pages)return;
+      const page=Object.values(pages)[0];
+      if(page&&page.thumbnail&&page.thumbnail.source){img.src=page.thumbnail.source;}
+    })
+    .catch(()=>{});
 });
 </script>
 </body>
