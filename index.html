@@ -149,172 +149,142 @@ const zoneIntro=[
 
 const M=(h,m)=>h*60+(m||0);
 const STOPS=[
-  // ---------- LATIN QUARTER / LEFT BANK (afternoon) ----------
   {z:0,name:"Medici Fountain",area:"6e · Jardin du Luxembourg",lat:48.8480667,lng:2.339308,walk:null,
    hours:[M(7,30),M(21,15)],cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Fontaine_M%C3%A9dicis%2C_Jardin_du_Luxembourg%2C_Paris_2012.jpg/640px-Fontaine_M%C3%A9dicis%2C_Jardin_du_Luxembourg%2C_Paris_2012.jpg",
    blurb:"Start in a shaded corner of the Luxembourg gardens, where this early-17th-century fountain feels like a secret grotto. A long, still basin runs up to a sculpted scene of the giant Polyphemus surprising two lovers — a calm place to begin.",
    fact:"It was moved and lengthened in the 1860s when Haussmann's new streets sliced through the area."},
 
   {z:0,name:"Jardin du Luxembourg",area:"6e",lat:48.8466144,lng:2.3363309,walk:4,
    hours:[M(7,30),M(21,15)],cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jardin_du_Luxembourg_20060926.jpg/640px-Jardin_du_Luxembourg_20060926.jpg",
    blurb:"Marie de' Medici created these gardens in 1612 around her Luxembourg Palace (now the French Senate). Parisians claim the famous green chairs, children sail toy boats on the octagonal pond, and the alleys are lined with statues.",
    fact:"The gardens hold around a hundred sculptures, plus an orchard of heritage apple and pear varieties."},
 
   {z:0,name:"Panthéon",area:"5e · Latin Quarter",lat:48.8462218,lng:2.3464138,walk:9,
    hours:[M(10,0),M(18,30)],cost:"€13 · under-18 free",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Panth%C3%A9on_de_Paris_001.JPG/640px-Panth%C3%A9on_de_Paris_001.JPG",
    blurb:"Begun as a church, repurposed after the Revolution as a secular temple to France's great minds. Voltaire, Rousseau, Hugo and the Curies lie in its crypt. Under the dome swings Foucault's pendulum, proving the Earth's rotation.",
    fact:"Foucault first hung his pendulum here in 1851; the version swinging today is a faithful reconstruction.",
    opt:"€13 · last entry ~5.45pm — do this earliest of the day's interiors"},
 
   {z:0,name:"Notre-Dame de Paris",area:"4e · Île de la Cité",added:true,lat:48.852968,lng:2.349902,walk:12,
    hours:[M(8,0),M(20,0)],cost:"Cathedral free · towers €16",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Notre-Dame_de_Paris%2C_4_October_2017.jpg/480px-Notre-Dame_de_Paris%2C_4_October_2017.jpg",
    blurb:"The great Gothic cathedral, begun in 1163 and triumphantly reopened in December 2024 after the 2019 fire. Entry to the restored nave is free, though queues are long — the exterior and the Île de la Cité are a joy regardless.",
    fact:"The restoration cleaned centuries of grime, so the interior stone is far brighter than anyone alive had seen it.",
    opt:"Cathedral free (expect a queue; timed slots help) · tower climb €16 separately"},
 
   {z:0,name:"Shakespeare and Company",area:"5e · Latin Quarter",lat:48.8525632,lng:2.3471303,walk:4,
    hours:[M(10,0),M(21,0)],cost:"Free to browse",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Shakespeare_and_Company%2C_Paris_13_August_2013.jpg/640px-Shakespeare_and_Company%2C_Paris_13_August_2013.jpg",
    blurb:"The English-language bookshop facing Notre-Dame across the Seine. The current store opened in 1951; its owner let writers — \"Tumbleweeds\" — sleep among the shelves in exchange for helping out. A literary institution.",
    fact:"It took its name from Sylvia Beach's original 1920s shop, which first published James Joyce's \"Ulysses.\""},
 
   {z:0,name:"Rue de Buci",area:"6e · Odéon",lat:48.8538661,lng:2.3371501,walk:9,
    hours:null,cost:"Free (market street)",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Rue_de_Buci%2C_Paris_6e.jpg/640px-Rue_de_Buci%2C_Paris_6e.jpg",
    blurb:"A bustling market street packed with cafés, oyster stalls, fromageries and flower sellers. It hums from breakfast to late night — a good place to graze a late lunch before the long walk north.",
    fact:"It traces a medieval line and once held one of the old city gates of Paris."},
 
   {z:0,name:"Café de Flore",area:"6e · Saint-Germain-des-Prés",lat:48.8541588,lng:2.3326046,walk:4,
    hours:[M(7,30),M(26,0)],cost:"Café — hot chocolate ~€8",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg/640px-Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg",
    blurb:"The legendary intellectual café of the Left Bank. Sartre and Simone de Beauvoir more or less worked here through the 1940s; the red banquettes and Art Deco mirrors are essentially unchanged. Order the famously thick hot chocolate.",
    fact:"Its rivalry with Les Deux Magots next door is a century old — regulars are fiercely loyal to one or the other."},
 
   {z:0,name:"Maison Fleuret",area:"6e/7e · Saint-Germain",lat:48.8554457,lng:2.3308321,walk:3,
    hours:[M(9,30),M(18,0)],cost:"Café — coffee ~€4",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg/640px-Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg",
    blurb:"A cosy book-lined coffee house and pâtisserie atelier on Rue des Saints-Pères. A good last Left-Bank pause for a cortado and a madeleine before crossing the river; it also runs hands-on croissant classes in the mornings.",
-   fact:"The atelier teaches small-group viennoiserie classes — you eat what you make. (Image: nearby Saint-Germain café scene.)"},
+   fact:"The atelier teaches small-group viennoiserie classes — you eat what you make."},
 
-  // ---------- SEINE / CHAMPS-ÉLYSÉES ----------
   {z:1,name:"Rue de l'Université",area:"7e · Invalides",lat:48.8610269,lng:2.3141312,walk:21,
    hours:null,cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Eiffel_Tower_from_the_Tour_Montparnasse%2C_22_April_2011.jpg/640px-Eiffel_Tower_from_the_Tour_Montparnasse%2C_22_April_2011.jpg",
    blurb:"A long, quiet Left-Bank street whose far end frames the Eiffel Tower between Haussmann façades — one of the city's favourite \"surprise reveal\" views, and your free look at the tower today before tomorrow's climb.",
    fact:"The classic shot looks west from around no. 200; go for it now, then turn back toward the river."},
 
   {z:1,name:"Pont Alexandre III",area:"8e / 7e · the Seine",lat:48.8638995,lng:2.313559,walk:10,
    hours:null,cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Pont_Alexandre_III%2C_Paris_8e_20140419.jpg/640px-Pont_Alexandre_III%2C_Paris_8e_20140419.jpg",
    blurb:"The most flamboyant bridge in Paris, built for the 1900 Exposition. Gilded winged horses crown its four pillars and Art Nouveau lamps line the deck. Cross here to the Right Bank.",
    fact:"It was deliberately built low and flat so it wouldn't block the view between the Invalides and the Champs-Élysées."},
 
   {z:1,name:"Petit Palais",area:"8e · Champs-Élysées",lat:48.8660479,lng:2.3145896,walk:4,
    hours:[M(10,0),M(20,0)],cost:"Free (permanent collection)",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Petit_Palais%2C_Paris_2010.jpg/640px-Petit_Palais%2C_Paris_2010.jpg",
    blurb:"Built for the 1900 World's Fair and now the City of Paris's fine-arts museum — free, and open late on Saturdays. Beyond the Beaux-Arts façade lies a serene semicircular garden courtyard most visitors miss.",
    fact:"Its collection spans antiquity to 1900; the inner garden café is one of the quietest spots in the quarter.",
    opt:"Free · open Sat until 8pm — your late-afternoon anchor"},
 
   {z:1,name:"Avenue des Champs-Élysées",area:"8e",lat:48.8693,lng:2.3079,walk:18,
    hours:null,cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Avenue_des_Champs-%C3%89lys%C3%A9es_July_24%2C_2009_N1.jpg/640px-Avenue_des_Champs-%C3%89lys%C3%A9es_July_24%2C_2009_N1.jpg",
    blurb:"\"The most beautiful avenue in the world\" sweeps two kilometres up toward the Arc. Laid out in the 17th century as a tree-lined promenade, it's now equal parts luxury flagship, café terrace and parade ground. Walk it uphill to the Étoile.",
    fact:"The name means \"Elysian Fields\" — the paradise of Greek myth. It hosts the Bastille Day parade and the Tour de France finish."},
 
   {z:1,name:"Arc de Triomphe",area:"8e · Étoile",lat:48.8737917,lng:2.2950275,walk:22,
    hours:[M(10,0),M(23,0)],cost:"Terrace €16 · base free",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Paris_Arc_de_Triomphe.jpg/640px-Paris_Arc_de_Triomphe.jpg",
    blurb:"Napoleon commissioned this colossal arch in 1806; it wasn't finished until 1836. Twelve avenues radiate from it like a star. The open terrace stays open late — a fine alternative sunset spot if you'd rather not climb to Montmartre.",
    fact:"Beneath it lies France's Tomb of the Unknown Soldier, where a flame has been rekindled every evening since 1923.",
    opt:"Rooftop terrace €16 (open to 11pm) · this is your turnaround — from here, head east toward the Louvre"},
 
-  // ---------- LOUVRE / PALAIS-ROYAL / BOULEVARDS ----------
   {z:2,name:"Louvre & Tuileries Garden",area:"1er · Louvre",added:true,lat:48.8606111,lng:2.337644,walk:38,
    hours:[M(7,0),M(22,30)],cost:"Garden free (no interior today)",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Louvre_Museum_Wikimedia_Commons.jpg/640px-Louvre_Museum_Wikimedia_Commons.jpg",
    blurb:"A walk-through, not a visit: stroll the formal Tuileries Garden and the great courtyard around I. M. Pei's glass pyramid. The garden runs late into the evening and is a grand passage through the city's spine. (It's a long leg from the Arc — a Métro hop is sensible.)",
    fact:"The Tuileries hosts the Paris 2026 Olympic cauldron this summer, so the garden stays open late — perfect for an evening pass-through.",
    opt:"Garden only — museum interior skipped (tickets sold out); save the Louvre for a dedicated morning"},
 
   {z:2,name:"Bourse de Commerce — Pinault Collection",area:"1er · Les Halles",lat:48.8628797,lng:2.3428392,walk:9,
    hours:[M(11,0),M(19,0)],cost:"€15 · under-18 free",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Bourse_de_commerce_de_Paris%2C_June_2021.jpg/640px-Bourse_de_commerce_de_Paris%2C_June_2021.jpg",
    blurb:"A circular 18th-century commodities exchange, reborn in 2021 as François Pinault's contemporary-art museum. Tadao Ando dropped a smooth concrete cylinder inside the historic glass dome — old and new in dialogue.",
    fact:"A 19th-century painted frieze runs around the dome's base, depicting global trade as the Victorians imagined it.",
    opt:"€15 · closes 7pm — pop in only if you're passing before then"},
 
   {z:2,name:"Galerie Vivienne",area:"2e · Palais-Royal",lat:48.8663533,lng:2.3394854,walk:9,
    hours:[M(8,30),M(20,0)],cost:"Free to wander",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Galerie_Vivienne%2C_Paris_2010.jpg/640px-Galerie_Vivienne%2C_Paris_2010.jpg",
    blurb:"The most elegant surviving passage, opened in 1823, with a soaring glass vault and intricate mosaic floors laid by Italian craftsmen. Boutiques, a famous old bookshop and a wine bar shelter beneath its neoclassical arches.",
    fact:"Look down: the star-patterned mosaics are signed by the Italian master mosaicist Giandomenico Facchina."},
 
   {z:2,name:"BnF Richelieu",area:"2e · Bourse",lat:48.8673812,lng:2.3384826,walk:2,
    hours:[M(10,0),M(18,0)],cost:"Reading rooms free · museum €10",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Salle_Labrouste_-_Bibliotheque_de_l%27INHA_2.jpg/640px-Salle_Labrouste_-_Bibliotheque_de_l%27INHA_2.jpg",
    blurb:"The historic home of France's national library, reopened in 2022. Henri Labrouste's iron-and-glass reading room and the Salle Ovale are architectural marvels — and free to step into, if you reach it before 6pm.",
    fact:"Labrouste's 1860s reading room used exposed cast iron as decoration — radical for a grand public building of its day."},
 
   {z:2,name:"Passage des Panoramas",area:"2e · Grands Boulevards",lat:48.8715109,lng:2.341904,walk:8,
    hours:[M(6,0),M(24,0)],cost:"Free to wander",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Passage_des_Panoramas%2C_Paris_2010.jpg/640px-Passage_des_Panoramas%2C_Paris_2010.jpg",
    blurb:"Opened in 1799, one of the oldest covered arcades in Paris — and among the first public spaces in the city lit by gas. A warren of stamp dealers, old-print sellers and tiny bistros under a glass roof; lively into the evening, and a fine dinner stop.",
    fact:"Audrey Hepburn and Cary Grant pass through it in the 1963 film \"Charade.\""},
 
   {z:2,name:"Rooftop, Galeries Lafayette",area:"9e · Bd Haussmann",lat:48.873629,lng:2.332015,walk:11,
    hours:[M(10,0),M(20,30)],cost:"Store & rooftop free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Galeries_Lafayette%2C_Paris_2013.jpg/640px-Galeries_Lafayette%2C_Paris_2013.jpg",
    blurb:"The grande dame of Paris department stores, crowned by a 1912 Art Nouveau glass dome. The free rooftop terrace is a great pre-sunset warm-up panorama — Garnier in front, the city all around — if you reach it before it closes at 8.30.",
    fact:"The terrace is free and rarely crowded compared with paid viewpoints.",
    opt:"Free rooftop · closes 8.30pm — a quick last city view before heading up the hill"},
 
   {z:2,name:"Opéra Garnier (Palais Garnier)",area:"9e · Opéra",lat:48.8719697,lng:2.3316014,walk:4,
    hours:[M(10,0),M(17,0)],cost:"€15 (interior closes 5pm)",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Op%C3%A9ra_Garnier_-_Paris.jpg/640px-Op%C3%A9ra_Garnier_-_Paris.jpg",
    blurb:"Charles Garnier's 1875 opera house is the most lavish theatre of the Second Empire — marble, gilt and a Chagall-painted ceiling. By evening the interior is closed, but the floodlit façade on Place de l'Opéra is a sight in itself.",
    fact:"The underground reservoir beneath the building inspired the lake in \"The Phantom of the Opera.\"",
    opt:"Interior closed by evening — enjoy the façade as you pass"},
 
-  // ---------- MONTMARTRE (sunset finale) ----------
   {z:3,name:"Moulin Rouge",area:"Pigalle · 18e",added:true,lat:48.8841473,lng:2.3322266,walk:22,
    hours:null,cost:"Façade free · shows from ~€88",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Moulin_rouge.jpg/640px-Moulin_rouge.jpg",
    blurb:"At the foot of the hill spins the red windmill of the world's most famous cabaret, open since 1889 and the birthplace of the modern can-can. A photogenic gateway into Montmartre as the light starts to turn. (Métro Blanche drops you right here.)",
    fact:"Toulouse-Lautrec's posters of its dancers in the 1890s made both the cabaret and the artist internationally famous.",
    opt:"Façade any time · its neon looks best as dusk falls"},
 
   {z:3,name:"La Maison Rose",area:"Montmartre · 18e",lat:48.8879815,lng:2.3396449,walk:16,
    hours:[M(12,0),M(22,30)],cost:"Café — drinks from ~€6",
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/La_Maison_Rose%2C_Montmartre%2C_Paris_2012.jpg/640px-La_Maison_Rose%2C_Montmartre%2C_Paris_2012.jpg",
    blurb:"The pink-and-green corner bistro that drew the Montmartre set — Picasso among them — and was painted by Utrillo, which sealed its fame. A pretty stop as you climb the last lanes toward the basilica.",
    fact:"Utrillo's mother, the painter Suzanne Valadon, lived nearby; the café sits at the centre of their Montmartre world."},
 
   {z:3,name:"Rue de l'Abreuvoir",area:"Montmartre · 18e",lat:48.8882424,lng:2.338944,walk:1,
    hours:null,cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Rue_de_l%27Abreuvoir%2C_Paris_18.jpg/640px-Rue_de_l%27Abreuvoir%2C_Paris_18.jpg",
    blurb:"Often called the prettiest street in Paris, this curving cobbled lane was the old path where animals were led down to drink — \"abreuvoir\" means watering trough. Quietest and loveliest in the soft evening light.",
    fact:"Utrillo painted this lane again and again; in golden hour the colours are at their best."},
 
   {z:3,name:"Rue du Calvaire",area:"Montmartre · 18e",lat:48.886028,lng:2.340407,walk:4,
    hours:null,cost:"Free",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Rue_du_Calvaire%2C_Paris_18e.jpg/640px-Rue_du_Calvaire%2C_Paris_18e.jpg",
    blurb:"A short, steep stairway-street with a sudden framed view over the rooftops — one of Montmartre's most photographed descents, glowing as the sun drops.",
    fact:"Its name (\"street of Calvary\") recalls the processions that once climbed the butte toward the hill's old chapels."},
 
   {z:3,name:"Place du Tertre",area:"Montmartre · 18e",lat:48.8865728,lng:2.3408278,walk:1,
    hours:null,cost:"Free (portraits paid)",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Place_du_Tertre%2C_Paris_2010.jpg/960px-Place_du_Tertre%2C_Paris_2010.jpg",
    blurb:"The old heart of bohemian Montmartre, where Picasso, Utrillo and Modigliani once lived and worked. Portraitists and caricaturists still set up their easels here — buzzing in the evening, a few steps from the basilica.",
    fact:"Around 1900 the nearby Bateau-Lavoir studios cost almost nothing — which is exactly why penniless painters colonised the hill."},
 
   {z:3,name:"Sacré-Cœur Basilica — sunset finish",area:"Montmartre · 18e",added:true,finale:true,lat:48.8867017,lng:2.3431325,walk:3,
    hours:[M(6,30),M(22,30)],cost:"Forecourt & basilica free · dome closed by now",free:true,
-   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Le_sacre_coeur.jpg/640px-Le_sacre_coeur.jpg",
    blurb:"The finale. The white basilica crowns the highest point in Paris, its southwest-facing forecourt looking straight into the setting sun and out over the whole city. Find a spot on the steps, settle in, and watch Paris light up.",
    fact:"The travertine stone secretes calcite when it rains, which is why the basilica stays a brilliant white as it ages.",
    opt:"Aim to arrive by ~9pm · forecourt is free · the dome climb has closed for the day, so this is purely the view"}
@@ -383,7 +353,7 @@ STOPS.forEach((s,i)=>{
     <div class="stop-body">
       <h3>${s.name}</h3>
       <div class="where">${s.area}</div>
-      <img class="photo" loading="lazy" src="${s.img}" alt="${s.name}" onerror="this.style.display='none'">
+      <img class="photo" loading="lazy" src="" id="img-${i}" alt="${s.name}">
       <div class="infobar">
         <span class="chip status ${st.cls}"><span class="pip"></span>${st.txt}</span>
         <span class="chip">🕑 Sat <b>${hrsTxt}</b></span>
@@ -415,6 +385,45 @@ for(let i=0;i<pts.length-1;i++){
   L.polyline([pts[i],pts[i+1]],{color:ZONES[STOPS[i].z].color,weight:3,opacity:.55,dashArray:'2,8',lineCap:'round'}).addTo(map);
 }
 map.fitBounds(L.latLngBounds(pts).pad(.1));
+
+const WIKIS=[
+  "Medici Fountain",
+  "Jardin du Luxembourg",
+  "Panthéon, Paris",
+  "Notre-Dame de Paris",
+  "Shakespeare and Company (bookshop)",
+  "Rue de Buci",
+  "Café de Flore",
+  "Rue des Saints-Pères, Paris",
+  "Rue de l'Université, Paris",
+  "Pont Alexandre III",
+  "Petit Palais",
+  "Avenue des Champs-Élysées",
+  "Arc de Triomphe",
+  "Louvre",
+  "Bourse de Commerce–Pinault Collection",
+  "Galerie Vivienne",
+  "Bibliothèque nationale de France",
+  "Passage des Panoramas",
+  "Galeries Lafayette",
+  "Palais Garnier",
+  "Moulin Rouge",
+  "La Maison Rose",
+  "Rue de l'Abreuvoir",
+  "Rue du Calvaire (Paris)",
+  "Place du Tertre",
+  "Sacré-Cœur Basilica, Paris"
+];
+WIKIS.forEach(async(w,i)=>{
+  const img=document.getElementById('img-'+i);
+  if(!img||!w)return;
+  try{
+    const r=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(w));
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.thumbnail?.source){img.src=d.thumbnail.source.replace(/\/\d+px-/,'/640px-');}
+  }catch(e){}
+});
 </script>
 </body>
 </html>
