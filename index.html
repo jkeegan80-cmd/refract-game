@@ -2,729 +2,419 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-<title>Refract!</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Paris Walk — Sunset at Sacré-Cœur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%; height: 100%; overflow: hidden; background: #0a0a14;
-    font-family: system-ui, -apple-system, sans-serif; color: #e0e0f0;
-    -webkit-user-select: none; user-select: none; touch-action: none;
+  :root{
+    --ink:#1c1a17; --paper:#f3ede2; --paper-2:#ece4d6;
+    --rouge:#9c2b2e; --rouge-soft:#c4555a; --gilt:#b8893b;
+    --line:#d8cdb9; --muted:#6f6657;
+    --open:#2f7d54; --soon:#bf7d22; --closed:#9a9388;
   }
-  #app { width: 100%; height: 100%; position: relative; }
-  #topbar {
-    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px;
-    background: linear-gradient(to bottom, rgba(10,10,20,0.95) 60%, transparent);
-    pointer-events: none;
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Inter',sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  a{color:var(--rouge);}
+
+  .hero{padding:60px 24px 30px;text-align:center;max-width:920px;margin:0 auto;}
+  .eyebrow{font-size:.72rem;letter-spacing:.34em;text-transform:uppercase;color:var(--rouge);font-weight:600;margin-bottom:20px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:300;font-size:clamp(2.5rem,7vw,5rem);line-height:1.02;margin:0 0 16px;letter-spacing:-.01em;}
+  .hero h1 em{font-style:italic;color:var(--rouge);}
+  .hero p{font-size:1.05rem;color:var(--muted);max-width:620px;margin:0 auto;}
+  .meta-row{display:flex;justify-content:center;flex-wrap:wrap;gap:26px;margin-top:30px;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;}
+  .meta-row span b{color:var(--rouge);font-weight:600;}
+
+  .today{max-width:820px;margin:30px auto 0;padding:20px 24px;background:var(--paper-2);
+    border:1px solid var(--line);border-left:4px solid var(--rouge);border-radius:0 6px 6px 0;text-align:left;font-size:.93rem;}
+  .today h2{font-family:'Fraunces',serif;font-weight:500;font-size:1.15rem;margin:0 0 8px;}
+  .today p{margin:0 0 8px;color:var(--ink);}
+  .today p:last-child{margin-bottom:0;}
+  .today b{color:var(--rouge);}
+  #clock,#sunset{font-variant-numeric:tabular-nums;}
+  .sunbar{display:inline-block;margin-top:4px;padding:3px 10px;border-radius:20px;background:#fff;border:1px solid var(--gilt);font-size:.82rem;color:var(--gilt);font-weight:600;}
+
+  .map-wrap{max-width:1180px;margin:30px auto 0;padding:0 16px;}
+  #map{height:72vh;min-height:460px;width:100%;border:1px solid var(--line);border-radius:4px;box-shadow:0 12px 40px rgba(40,30,15,.12);z-index:1;}
+  .map-key{display:flex;flex-wrap:wrap;gap:14px 26px;justify-content:center;margin:16px auto 0;font-size:.8rem;color:var(--muted);}
+  .map-key span{display:flex;align-items:center;gap:8px;}
+  .dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+
+  .stops{max-width:900px;margin:60px auto 0;padding:0 24px;}
+  .zone-head{margin:60px 0 8px;border-top:1px solid var(--gilt);padding-top:20px;}
+  .zone-head .znum{font-family:'Fraunces',serif;font-style:italic;color:var(--gilt);font-size:.95rem;letter-spacing:.1em;}
+  .zone-head h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.7rem,4vw,2.4rem);margin:.1em 0 .15em;}
+  .zone-head p{margin:0;color:var(--muted);font-size:.95rem;max-width:640px;}
+
+  .leg{display:flex;align-items:center;gap:10px;margin:26px 0 0;padding-left:4px;color:var(--muted);font-size:.82rem;}
+  .leg::before{content:"";width:2px;height:26px;background:var(--line);margin-left:46px;}
+  .leg .walkicon{font-size:.95rem;}
+
+  .stop{display:grid;grid-template-columns:96px 1fr;gap:26px;padding:30px 0 34px;border-bottom:1px solid var(--line);scroll-margin-top:20px;}
+  .stop:last-child{border-bottom:none;}
+  .stop .idx{font-family:'Fraunces',serif;font-size:2.3rem;font-weight:300;color:var(--rouge);line-height:1;border-right:1px solid var(--line);padding-right:18px;text-align:right;}
+  .stop .idx small{display:block;font-family:'Inter',sans-serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:8px;}
+  .stop-body h3{font-family:'Fraunces',serif;font-weight:500;font-size:1.45rem;margin:0 0 4px;}
+  .stop-body .where{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gilt);margin-bottom:12px;}
+  .photo{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:4px;margin:4px 0 14px;background:var(--paper-2);border:1px solid var(--line);display:block;}
+
+  .infobar{display:flex;flex-wrap:wrap;gap:8px 10px;margin:0 0 14px;}
+  .chip{font-size:.78rem;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px;line-height:1.3;}
+  .chip b{font-weight:600;}
+  .status{font-weight:600;}
+  .status .pip{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}
+  .st-open{color:var(--open);} .st-open .pip{background:var(--open);}
+  .st-soon{color:var(--soon);} .st-soon .pip{background:var(--soon);}
+  .st-closed{color:var(--closed);} .st-closed .pip{background:var(--closed);}
+  .st-free{color:var(--open);}
+
+  .stop-body p.blurb{margin:0 0 12px;}
+  .fact{background:var(--paper-2);border-left:3px solid var(--rouge);padding:11px 15px;font-size:.9rem;border-radius:0 4px 4px 0;}
+  .fact b{color:var(--rouge);letter-spacing:.04em;font-size:.72rem;text-transform:uppercase;display:block;margin-bottom:2px;}
+  .opt{display:inline-block;margin:10px 0 0;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gilt);font-weight:600;}
+  .finale{border-left-color:var(--gilt);background:linear-gradient(120deg,#f6ead2,#f0e0c8);}
+  .finale b{color:var(--gilt);}
+  .links{margin-top:12px;font-size:.85rem;}
+  .links a{margin-right:16px;text-decoration:none;border-bottom:1px solid var(--rouge-soft);padding-bottom:1px;}
+
+  footer{text-align:center;padding:60px 24px 90px;color:var(--muted);font-size:.85rem;}
+  footer .rule{width:60px;height:1px;background:var(--gilt);margin:0 auto 24px;}
+
+  @media (max-width:600px){
+    .stop{grid-template-columns:50px 1fr;gap:14px;}
+    .stop .idx{font-size:1.6rem;padding-right:11px;}
+    .leg::before{margin-left:24px;}
+    #map{height:62vh;}
   }
-  #topbar > * { pointer-events: auto; }
-  #topbar h1 { font-size: 15px; font-weight: 700; color: #f0c040; letter-spacing: 2px; text-transform: uppercase; font-family: monospace; }
-  #level-badge { font-family: monospace; font-size: 11px; color: #6a6a8a; background: #12121f; padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
-  #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  #toolbox {
-    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
-    background: linear-gradient(to top, rgba(10,10,20,0.98) 70%, transparent);
-    padding: 6px 12px 14px;
-  }
-  #toolbox-label { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #6a6a8a; margin-bottom: 6px; font-family: monospace; }
-  #block-tray { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-  .block-card {
-    flex-shrink: 0; width: 66px; height: 66px; border-radius: 12px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px; cursor: grab; transition: transform 0.15s, opacity 0.2s;
-  }
-  .block-card.rect { background: rgba(100,180,255,0.2); border: 1.5px solid rgba(100,180,255,0.5); }
-  .block-card.tri { background: rgba(120,255,180,0.2); border: 1.5px solid rgba(120,255,180,0.5); }
-  .block-card.used { opacity: 0.25; pointer-events: none; }
-  .block-card svg { width: 28px; height: 28px; }
-  .block-card span { font-size: 8px; font-family: monospace; color: #6a6a8a; }
-  #controls-row { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
-  .btn {
-    background: #12121f; border: 1px solid rgba(255,255,255,0.1); color: #e0e0f0;
-    font-family: system-ui, sans-serif; font-size: 12px; padding: 5px 12px; border-radius: 8px; cursor: pointer;
-  }
-  .btn:active { background: rgba(255,255,255,0.08); }
-  #rotate-hint { font-size: 9px; color: #6a6a8a; font-family: monospace; margin-left: auto; }
-  .overlay {
-    display: none; position: absolute; inset: 0; z-index: 50;
-    flex-direction: column; align-items: center; justify-content: center;
-    gap: 14px;
-  }
-  .overlay.show { display: flex; }
-  #win-overlay { background: rgba(10,10,20,0.92); }
-  #win-overlay h2 { font-family: monospace; font-size: 26px; color: #40f080; letter-spacing: 3px; }
-  #win-overlay p { color: #6a6a8a; font-size: 13px; text-align: center; max-width: 260px; }
-  .action-btn {
-    margin-top: 10px; background: #f0c040; color: #0a0a14; font-weight: 700; font-size: 14px;
-    padding: 11px 28px; border: none; border-radius: 12px; cursor: pointer;
-    font-family: monospace; letter-spacing: 1px;
-  }
-  #info-overlay { background: rgba(10,10,20,0.96); padding: 28px; }
-  #info-overlay h2 { font-family: monospace; font-size: 18px; color: #f0c040; margin-bottom: 4px; }
-  #info-overlay p { color: #c0c0d8; font-size: 13px; line-height: 1.6; text-align: center; max-width: 300px; }
-  .val { color: #f0c040; font-weight: 700; }
-  #info-overlay .action-btn { font-size: 13px; padding: 10px 24px; }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="topbar"><h1>Refract!</h1><span id="level-badge">Level 1</span></div>
-  <canvas id="gameCanvas"></canvas>
-  <div id="toolbox">
-    <div id="toolbox-label">Drag blocks onto the board</div>
-    <div id="block-tray"></div>
-    <div id="controls-row">
-      <button class="btn" id="btn-reset">Reset</button>
-      <button class="btn" id="btn-info">Help</button>
-      <span id="rotate-hint">Tap block = rotate</span>
-    </div>
+
+<header class="hero">
+  <div class="eyebrow">Walking itinerary · Saturday, ending at sunset</div>
+  <h1>Up through the city<br>to <em>sunset</em> on the hill</h1>
+  <p>The reel's stops plus a few classics, run in reverse so the day climbs from the Left Bank to Montmartre — finishing on the steps of Sacré-Cœur as the sun goes down over Paris.</p>
+  <div class="meta-row">
+    <span><b id="nstops">26</b> stops</span>
+    <span><b>4</b> quarters</span>
+    <span><b>~13 km</b> on foot</span>
+    <span><b id="walktotal">~3h</b> walking</span>
   </div>
-  <div class="overlay" id="win-overlay">
-    <h2>SOLVED</h2>
-    <p>Light reached the target!</p>
-    <button class="action-btn" id="next-btn">NEXT LEVEL</button>
+
+  <div class="today">
+    <h2>The plan for tonight</h2>
+    <p>It's <b><span id="clock">—</span></b> in Paris. Sunset is at <b><span id="sunset">9:54pm</span></b>, with the sky staying bright until roughly 10:40pm. <span class="sunbar" id="suncount">—</span></p>
+    <p><b>Aim to be on the Sacré-Cœur forecourt by about 9pm.</b> That leaves time to settle in for the light show as the city glows and the basilica turns gold. Everything before it is sequenced so the ticketed indoor sights come while they're still open — the <b>Panthéon</b> (last entry ~5.45pm) and the free <b>Petit Palais</b> (Sat to 8pm) are your afternoon anchors.</p>
+    <p><b>Two things you told me, baked in:</b> the <b>Louvre</b> is a garden walk-through only (no interior — tickets sold out), and the <b>Eiffel Tower</b> is dropped from today since you're ascending tomorrow — though you'll see it beautifully from the Left Bank and the bridges.</p>
+    <p><b>Getting home:</b> you'll finish in Montmartre near 10pm. It's lovely and busy at sunset, but plan a taxi or Métro down from <b>Abbesses</b> or <b>Anvers</b> rather than walking through Pigalle late. Carry water — it's a hot one.</p>
   </div>
-  <div class="overlay show" id="info-overlay">
-    <h2>Refract!</h2>
-    <p>Guide a <span class="val">beam of light</span> from the bottom to the <span class="val">target hole</span> on the edge of the screen.</p>
-    <p><span class="val">Drag</span> glass blocks from the tray onto the board. Light bends when entering glass and reflects at steep angles.</p>
-    <p><span class="val">Tap</span> a placed block to rotate it. <span class="val">Double-tap</span> to remove it.</p>
-    <p>Rectangles: n=<span class="val">1.5</span> Prisms: n=<span class="val">1.8</span></p>
-    <button class="action-btn" id="btn-start">START PLAYING</button>
+</header>
+
+<section class="map-wrap">
+  <div id="map"></div>
+  <div class="map-key">
+    <span><i class="dot" style="background:#3a4a72"></i> Latin Quarter · Left Bank</span>
+    <span><i class="dot" style="background:#3d6b5c"></i> The Seine · Champs-Élysées</span>
+    <span><i class="dot" style="background:#b8893b"></i> Louvre · Palais-Royal · Boulevards</span>
+    <span><i class="dot" style="background:#9c2b2e"></i> Montmartre — finish at sunset</span>
   </div>
-</div>
+</section>
+
+<main class="stops" id="list"></main>
+
+<footer>
+  <div class="rule"></div>
+  Walking times are door-to-door estimates at an easy pace and don't count time inside. Hours and prices were checked for late June 2026 but can change — confirm on the day. The route climbs gently north all afternoon and ends high on the butte; the two long legs (Left Bank → Champs-Élysées, and the Boulevards → Montmartre) are worth a Métro hop to save your legs for the hill.<br><br>
+  26 stops · run in reverse for a sunset finish · adult prices shown.
+</footer>
+
 <script>
-(function() {
-  "use strict";
+const ZONES=[
+  {name:"Latin Quarter & Left Bank", color:"#3a4a72"},
+  {name:"The Seine & the Champs-Élysées", color:"#3d6b5c"},
+  {name:"The Louvre, Palais-Royal & the Grands Boulevards", color:"#b8893b"},
+  {name:"Montmartre — finish at sunset", color:"#9c2b2e"}
+];
+const zoneIntro=[
+  "Begin among the bookshops, cathedral, cafés and gardens of the Left Bank — and get the ticketed sights in while they're open.",
+  "Cross the river by its most ornate bridge and walk the grand axis up toward the Arc.",
+  "Come back east through the Louvre's gardens, the glass-roofed passages and the opera quarter.",
+  "Climb the butte for the finale: the artists' square, the cobbled lanes, and sunset from the basilica steps."
+];
 
-  var canvas = document.getElementById("gameCanvas");
-  var ctx = canvas.getContext("2d");
-  var W, H, dpr;
-  var TOOLBOX_H = 130, TOPBAR_H = 44, HOLE_SIZE = 28;
+const M=(h,m)=>h*60+(m||0);
+const STOPS=[
+  // ---------- LATIN QUARTER / LEFT BANK (afternoon) ----------
+  {z:0,name:"Medici Fountain",area:"6e · Jardin du Luxembourg",lat:48.8480667,lng:2.339308,walk:null,
+   hours:[M(7,30),M(21,15)],cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Fontaine_M%C3%A9dicis%2C_Jardin_du_Luxembourg%2C_Paris_2012.jpg/640px-Fontaine_M%C3%A9dicis%2C_Jardin_du_Luxembourg%2C_Paris_2012.jpg",
+   blurb:"Start in a shaded corner of the Luxembourg gardens, where this early-17th-century fountain feels like a secret grotto. A long, still basin runs up to a sculpted scene of the giant Polyphemus surprising two lovers — a calm place to begin.",
+   fact:"It was moved and lengthened in the 1860s when Haussmann's new streets sliced through the area."},
 
-  function resize() {
-    dpr = window.devicePixelRatio || 1;
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    traceLight();
+  {z:0,name:"Jardin du Luxembourg",area:"6e",lat:48.8466144,lng:2.3363309,walk:4,
+   hours:[M(7,30),M(21,15)],cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jardin_du_Luxembourg_20060926.jpg/640px-Jardin_du_Luxembourg_20060926.jpg",
+   blurb:"Marie de' Medici created these gardens in 1612 around her Luxembourg Palace (now the French Senate). Parisians claim the famous green chairs, children sail toy boats on the octagonal pond, and the alleys are lined with statues.",
+   fact:"The gardens hold around a hundred sculptures, plus an orchard of heritage apple and pear varieties."},
+
+  {z:0,name:"Panthéon",area:"5e · Latin Quarter",lat:48.8462218,lng:2.3464138,walk:9,
+   hours:[M(10,0),M(18,30)],cost:"€13 · under-18 free",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Panth%C3%A9on_de_Paris_001.JPG/640px-Panth%C3%A9on_de_Paris_001.JPG",
+   blurb:"Begun as a church, repurposed after the Revolution as a secular temple to France's great minds. Voltaire, Rousseau, Hugo and the Curies lie in its crypt. Under the dome swings Foucault's pendulum, proving the Earth's rotation.",
+   fact:"Foucault first hung his pendulum here in 1851; the version swinging today is a faithful reconstruction.",
+   opt:"€13 · last entry ~5.45pm — do this earliest of the day's interiors"},
+
+  {z:0,name:"Notre-Dame de Paris",area:"4e · Île de la Cité",added:true,lat:48.852968,lng:2.349902,walk:12,
+   hours:[M(8,0),M(20,0)],cost:"Cathedral free · towers €16",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Notre-Dame_de_Paris%2C_4_October_2017.jpg/480px-Notre-Dame_de_Paris%2C_4_October_2017.jpg",
+   blurb:"The great Gothic cathedral, begun in 1163 and triumphantly reopened in December 2024 after the 2019 fire. Entry to the restored nave is free, though queues are long — the exterior and the Île de la Cité are a joy regardless.",
+   fact:"The restoration cleaned centuries of grime, so the interior stone is far brighter than anyone alive had seen it.",
+   opt:"Cathedral free (expect a queue; timed slots help) · tower climb €16 separately"},
+
+  {z:0,name:"Shakespeare and Company",area:"5e · Latin Quarter",lat:48.8525632,lng:2.3471303,walk:4,
+   hours:[M(10,0),M(21,0)],cost:"Free to browse",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Shakespeare_and_Company%2C_Paris_13_August_2013.jpg/640px-Shakespeare_and_Company%2C_Paris_13_August_2013.jpg",
+   blurb:"The English-language bookshop facing Notre-Dame across the Seine. The current store opened in 1951; its owner let writers — \"Tumbleweeds\" — sleep among the shelves in exchange for helping out. A literary institution.",
+   fact:"It took its name from Sylvia Beach's original 1920s shop, which first published James Joyce's \"Ulysses.\""},
+
+  {z:0,name:"Rue de Buci",area:"6e · Odéon",lat:48.8538661,lng:2.3371501,walk:9,
+   hours:null,cost:"Free (market street)",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Rue_de_Buci%2C_Paris_6e.jpg/640px-Rue_de_Buci%2C_Paris_6e.jpg",
+   blurb:"A bustling market street packed with cafés, oyster stalls, fromageries and flower sellers. It hums from breakfast to late night — a good place to graze a late lunch before the long walk north.",
+   fact:"It traces a medieval line and once held one of the old city gates of Paris."},
+
+  {z:0,name:"Café de Flore",area:"6e · Saint-Germain-des-Prés",lat:48.8541588,lng:2.3326046,walk:4,
+   hours:[M(7,30),M(26,0)],cost:"Café — hot chocolate ~€8",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg/640px-Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg",
+   blurb:"The legendary intellectual café of the Left Bank. Sartre and Simone de Beauvoir more or less worked here through the 1940s; the red banquettes and Art Deco mirrors are essentially unchanged. Order the famously thick hot chocolate.",
+   fact:"Its rivalry with Les Deux Magots next door is a century old — regulars are fiercely loyal to one or the other."},
+
+  {z:0,name:"Maison Fleuret",area:"6e/7e · Saint-Germain",lat:48.8554457,lng:2.3308321,walk:3,
+   hours:[M(9,30),M(18,0)],cost:"Café — coffee ~€4",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg/640px-Caf%C3%A9_de_Flore%2C_Paris_18_December_2014.jpg",
+   blurb:"A cosy book-lined coffee house and pâtisserie atelier on Rue des Saints-Pères. A good last Left-Bank pause for a cortado and a madeleine before crossing the river; it also runs hands-on croissant classes in the mornings.",
+   fact:"The atelier teaches small-group viennoiserie classes — you eat what you make. (Image: nearby Saint-Germain café scene.)"},
+
+  // ---------- SEINE / CHAMPS-ÉLYSÉES ----------
+  {z:1,name:"Rue de l'Université",area:"7e · Invalides",lat:48.8610269,lng:2.3141312,walk:21,
+   hours:null,cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Eiffel_Tower_from_the_Tour_Montparnasse%2C_22_April_2011.jpg/640px-Eiffel_Tower_from_the_Tour_Montparnasse%2C_22_April_2011.jpg",
+   blurb:"A long, quiet Left-Bank street whose far end frames the Eiffel Tower between Haussmann façades — one of the city's favourite \"surprise reveal\" views, and your free look at the tower today before tomorrow's climb.",
+   fact:"The classic shot looks west from around no. 200; go for it now, then turn back toward the river."},
+
+  {z:1,name:"Pont Alexandre III",area:"8e / 7e · the Seine",lat:48.8638995,lng:2.313559,walk:10,
+   hours:null,cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Pont_Alexandre_III%2C_Paris_8e_20140419.jpg/640px-Pont_Alexandre_III%2C_Paris_8e_20140419.jpg",
+   blurb:"The most flamboyant bridge in Paris, built for the 1900 Exposition. Gilded winged horses crown its four pillars and Art Nouveau lamps line the deck. Cross here to the Right Bank.",
+   fact:"It was deliberately built low and flat so it wouldn't block the view between the Invalides and the Champs-Élysées."},
+
+  {z:1,name:"Petit Palais",area:"8e · Champs-Élysées",lat:48.8660479,lng:2.3145896,walk:4,
+   hours:[M(10,0),M(20,0)],cost:"Free (permanent collection)",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Petit_Palais%2C_Paris_2010.jpg/640px-Petit_Palais%2C_Paris_2010.jpg",
+   blurb:"Built for the 1900 World's Fair and now the City of Paris's fine-arts museum — free, and open late on Saturdays. Beyond the Beaux-Arts façade lies a serene semicircular garden courtyard most visitors miss.",
+   fact:"Its collection spans antiquity to 1900; the inner garden café is one of the quietest spots in the quarter.",
+   opt:"Free · open Sat until 8pm — your late-afternoon anchor"},
+
+  {z:1,name:"Avenue des Champs-Élysées",area:"8e",lat:48.8693,lng:2.3079,walk:18,
+   hours:null,cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Avenue_des_Champs-%C3%89lys%C3%A9es_July_24%2C_2009_N1.jpg/640px-Avenue_des_Champs-%C3%89lys%C3%A9es_July_24%2C_2009_N1.jpg",
+   blurb:"\"The most beautiful avenue in the world\" sweeps two kilometres up toward the Arc. Laid out in the 17th century as a tree-lined promenade, it's now equal parts luxury flagship, café terrace and parade ground. Walk it uphill to the Étoile.",
+   fact:"The name means \"Elysian Fields\" — the paradise of Greek myth. It hosts the Bastille Day parade and the Tour de France finish."},
+
+  {z:1,name:"Arc de Triomphe",area:"8e · Étoile",lat:48.8737917,lng:2.2950275,walk:22,
+   hours:[M(10,0),M(23,0)],cost:"Terrace €16 · base free",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Paris_Arc_de_Triomphe.jpg/640px-Paris_Arc_de_Triomphe.jpg",
+   blurb:"Napoleon commissioned this colossal arch in 1806; it wasn't finished until 1836. Twelve avenues radiate from it like a star. The open terrace stays open late — a fine alternative sunset spot if you'd rather not climb to Montmartre.",
+   fact:"Beneath it lies France's Tomb of the Unknown Soldier, where a flame has been rekindled every evening since 1923.",
+   opt:"Rooftop terrace €16 (open to 11pm) · this is your turnaround — from here, head east toward the Louvre"},
+
+  // ---------- LOUVRE / PALAIS-ROYAL / BOULEVARDS ----------
+  {z:2,name:"Louvre & Tuileries Garden",area:"1er · Louvre",added:true,lat:48.8606111,lng:2.337644,walk:38,
+   hours:[M(7,0),M(22,30)],cost:"Garden free (no interior today)",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Louvre_Museum_Wikimedia_Commons.jpg/640px-Louvre_Museum_Wikimedia_Commons.jpg",
+   blurb:"A walk-through, not a visit: stroll the formal Tuileries Garden and the great courtyard around I. M. Pei's glass pyramid. The garden runs late into the evening and is a grand passage through the city's spine. (It's a long leg from the Arc — a Métro hop is sensible.)",
+   fact:"The Tuileries hosts the Paris 2026 Olympic cauldron this summer, so the garden stays open late — perfect for an evening pass-through.",
+   opt:"Garden only — museum interior skipped (tickets sold out); save the Louvre for a dedicated morning"},
+
+  {z:2,name:"Bourse de Commerce — Pinault Collection",area:"1er · Les Halles",lat:48.8628797,lng:2.3428392,walk:9,
+   hours:[M(11,0),M(19,0)],cost:"€15 · under-18 free",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Bourse_de_commerce_de_Paris%2C_June_2021.jpg/640px-Bourse_de_commerce_de_Paris%2C_June_2021.jpg",
+   blurb:"A circular 18th-century commodities exchange, reborn in 2021 as François Pinault's contemporary-art museum. Tadao Ando dropped a smooth concrete cylinder inside the historic glass dome — old and new in dialogue.",
+   fact:"A 19th-century painted frieze runs around the dome's base, depicting global trade as the Victorians imagined it.",
+   opt:"€15 · closes 7pm — pop in only if you're passing before then"},
+
+  {z:2,name:"Galerie Vivienne",area:"2e · Palais-Royal",lat:48.8663533,lng:2.3394854,walk:9,
+   hours:[M(8,30),M(20,0)],cost:"Free to wander",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Galerie_Vivienne%2C_Paris_2010.jpg/640px-Galerie_Vivienne%2C_Paris_2010.jpg",
+   blurb:"The most elegant surviving passage, opened in 1823, with a soaring glass vault and intricate mosaic floors laid by Italian craftsmen. Boutiques, a famous old bookshop and a wine bar shelter beneath its neoclassical arches.",
+   fact:"Look down: the star-patterned mosaics are signed by the Italian master mosaicist Giandomenico Facchina."},
+
+  {z:2,name:"BnF Richelieu",area:"2e · Bourse",lat:48.8673812,lng:2.3384826,walk:2,
+   hours:[M(10,0),M(18,0)],cost:"Reading rooms free · museum €10",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Salle_Labrouste_-_Bibliotheque_de_l%27INHA_2.jpg/640px-Salle_Labrouste_-_Bibliotheque_de_l%27INHA_2.jpg",
+   blurb:"The historic home of France's national library, reopened in 2022. Henri Labrouste's iron-and-glass reading room and the Salle Ovale are architectural marvels — and free to step into, if you reach it before 6pm.",
+   fact:"Labrouste's 1860s reading room used exposed cast iron as decoration — radical for a grand public building of its day."},
+
+  {z:2,name:"Passage des Panoramas",area:"2e · Grands Boulevards",lat:48.8715109,lng:2.341904,walk:8,
+   hours:[M(6,0),M(24,0)],cost:"Free to wander",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Passage_des_Panoramas%2C_Paris_2010.jpg/640px-Passage_des_Panoramas%2C_Paris_2010.jpg",
+   blurb:"Opened in 1799, one of the oldest covered arcades in Paris — and among the first public spaces in the city lit by gas. A warren of stamp dealers, old-print sellers and tiny bistros under a glass roof; lively into the evening, and a fine dinner stop.",
+   fact:"Audrey Hepburn and Cary Grant pass through it in the 1963 film \"Charade.\""},
+
+  {z:2,name:"Rooftop, Galeries Lafayette",area:"9e · Bd Haussmann",lat:48.873629,lng:2.332015,walk:11,
+   hours:[M(10,0),M(20,30)],cost:"Store & rooftop free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Galeries_Lafayette%2C_Paris_2013.jpg/640px-Galeries_Lafayette%2C_Paris_2013.jpg",
+   blurb:"The grande dame of Paris department stores, crowned by a 1912 Art Nouveau glass dome. The free rooftop terrace is a great pre-sunset warm-up panorama — Garnier in front, the city all around — if you reach it before it closes at 8.30.",
+   fact:"The terrace is free and rarely crowded compared with paid viewpoints.",
+   opt:"Free rooftop · closes 8.30pm — a quick last city view before heading up the hill"},
+
+  {z:2,name:"Opéra Garnier (Palais Garnier)",area:"9e · Opéra",lat:48.8719697,lng:2.3316014,walk:4,
+   hours:[M(10,0),M(17,0)],cost:"€15 (interior closes 5pm)",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Op%C3%A9ra_Garnier_-_Paris.jpg/640px-Op%C3%A9ra_Garnier_-_Paris.jpg",
+   blurb:"Charles Garnier's 1875 opera house is the most lavish theatre of the Second Empire — marble, gilt and a Chagall-painted ceiling. By evening the interior is closed, but the floodlit façade on Place de l'Opéra is a sight in itself.",
+   fact:"The underground reservoir beneath the building inspired the lake in \"The Phantom of the Opera.\"",
+   opt:"Interior closed by evening — enjoy the façade as you pass"},
+
+  // ---------- MONTMARTRE (sunset finale) ----------
+  {z:3,name:"Moulin Rouge",area:"Pigalle · 18e",added:true,lat:48.8841473,lng:2.3322266,walk:22,
+   hours:null,cost:"Façade free · shows from ~€88",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Moulin_rouge.jpg/640px-Moulin_rouge.jpg",
+   blurb:"At the foot of the hill spins the red windmill of the world's most famous cabaret, open since 1889 and the birthplace of the modern can-can. A photogenic gateway into Montmartre as the light starts to turn. (Métro Blanche drops you right here.)",
+   fact:"Toulouse-Lautrec's posters of its dancers in the 1890s made both the cabaret and the artist internationally famous.",
+   opt:"Façade any time · its neon looks best as dusk falls"},
+
+  {z:3,name:"La Maison Rose",area:"Montmartre · 18e",lat:48.8879815,lng:2.3396449,walk:16,
+   hours:[M(12,0),M(22,30)],cost:"Café — drinks from ~€6",
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/La_Maison_Rose%2C_Montmartre%2C_Paris_2012.jpg/640px-La_Maison_Rose%2C_Montmartre%2C_Paris_2012.jpg",
+   blurb:"The pink-and-green corner bistro that drew the Montmartre set — Picasso among them — and was painted by Utrillo, which sealed its fame. A pretty stop as you climb the last lanes toward the basilica.",
+   fact:"Utrillo's mother, the painter Suzanne Valadon, lived nearby; the café sits at the centre of their Montmartre world."},
+
+  {z:3,name:"Rue de l'Abreuvoir",area:"Montmartre · 18e",lat:48.8882424,lng:2.338944,walk:1,
+   hours:null,cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Rue_de_l%27Abreuvoir%2C_Paris_18.jpg/640px-Rue_de_l%27Abreuvoir%2C_Paris_18.jpg",
+   blurb:"Often called the prettiest street in Paris, this curving cobbled lane was the old path where animals were led down to drink — \"abreuvoir\" means watering trough. Quietest and loveliest in the soft evening light.",
+   fact:"Utrillo painted this lane again and again; in golden hour the colours are at their best."},
+
+  {z:3,name:"Rue du Calvaire",area:"Montmartre · 18e",lat:48.886028,lng:2.340407,walk:4,
+   hours:null,cost:"Free",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Rue_du_Calvaire%2C_Paris_18e.jpg/640px-Rue_du_Calvaire%2C_Paris_18e.jpg",
+   blurb:"A short, steep stairway-street with a sudden framed view over the rooftops — one of Montmartre's most photographed descents, glowing as the sun drops.",
+   fact:"Its name (\"street of Calvary\") recalls the processions that once climbed the butte toward the hill's old chapels."},
+
+  {z:3,name:"Place du Tertre",area:"Montmartre · 18e",lat:48.8865728,lng:2.3408278,walk:1,
+   hours:null,cost:"Free (portraits paid)",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Place_du_Tertre%2C_Paris_2010.jpg/960px-Place_du_Tertre%2C_Paris_2010.jpg",
+   blurb:"The old heart of bohemian Montmartre, where Picasso, Utrillo and Modigliani once lived and worked. Portraitists and caricaturists still set up their easels here — buzzing in the evening, a few steps from the basilica.",
+   fact:"Around 1900 the nearby Bateau-Lavoir studios cost almost nothing — which is exactly why penniless painters colonised the hill."},
+
+  {z:3,name:"Sacré-Cœur Basilica — sunset finish",area:"Montmartre · 18e",added:true,finale:true,lat:48.8867017,lng:2.3431325,walk:3,
+   hours:[M(6,30),M(22,30)],cost:"Forecourt & basilica free · dome closed by now",free:true,
+   img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Le_sacre_coeur.jpg/640px-Le_sacre_coeur.jpg",
+   blurb:"The finale. The white basilica crowns the highest point in Paris, its southwest-facing forecourt looking straight into the setting sun and out over the whole city. Find a spot on the steps, settle in, and watch Paris light up.",
+   fact:"The travertine stone secretes calcite when it rains, which is why the basilica stays a brilliant white as it ages.",
+   opt:"Aim to arrive by ~9pm · forecourt is free · the dome climb has closed for the day, so this is purely the view"}
+];
+
+function parisNowMinutes(){
+  const f=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit',hour12:false});
+  const p=f.formatToParts(new Date());
+  let h=+p.find(x=>x.type==='hour').value, m=+p.find(x=>x.type==='minute').value;
+  if(h===24)h=0;
+  return h*60+m;
+}
+function statusFor(s){
+  if(!s.hours) return {cls:'st-open',txt:'Always open'};
+  const now=parisNowMinutes();
+  let [o,c]=s.hours;
+  const isOpen=(now>=o && now<c)||(c>1440 && now<(c-1440));
+  if(!isOpen) return {cls:'st-closed',txt:'Closed now'};
+  const mins=(c>1440 && now<(c-1440))?(c-1440-now):(c-now);
+  if(mins<=60) return {cls:'st-soon',txt:'Closes within the hour'};
+  return {cls:'st-open',txt:'Open now'};
+}
+function fmt(mins){let h=Math.floor(mins/60)%24,m=mins%60;return (h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+(h<12?'am':'pm');}
+
+const SUNSET=M(21,54);
+function tick(){
+  const f=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',weekday:'long',hour:'2-digit',minute:'2-digit',hour12:true});
+  document.getElementById('clock').textContent=f.format(new Date())+' (Paris)';
+  const now=parisNowMinutes();
+  const diff=SUNSET-now;
+  const el=document.getElementById('suncount');
+  if(diff>90){const h=Math.floor(diff/60),m=diff%60;el.textContent='☀ '+(h?h+'h ':'')+m+'m until sunset';}
+  else if(diff>0){el.textContent='☀ '+diff+'m until sunset — head for the hill';}
+  else if(diff>-50){el.textContent='🌇 Golden hour now — you should be on the steps';}
+  else {el.textContent='🌙 Sun has set — city lights are on';}
+}
+tick(); setInterval(tick,30000);
+
+document.getElementById('nstops').textContent=STOPS.length;
+let totalWalk=STOPS.reduce((a,s)=>a+(s.walk||0),0);
+document.getElementById('walktotal').textContent='~'+(Math.round(totalWalk/60*10)/10)+'h';
+
+const list=document.getElementById('list');
+let lastZone=-1;
+STOPS.forEach((s,i)=>{
+  if(s.z!==lastZone){
+    lastZone=s.z;
+    const zh=document.createElement('div');
+    zh.className='zone-head';
+    zh.innerHTML=`<div class="znum">Leg ${s.z+1} of 4</div><h2>${ZONES[s.z].name}</h2><p>${zoneIntro[s.z]}</p>`;
+    list.appendChild(zh);
   }
-  window.addEventListener("resize", resize);
-
-  var currentLevel = 0;
-  var placedBlocks = [];
-  var selectedBlock = null;
-  var dragging = null;
-  var dragOffset = { x: 0, y: 0 };
-  var lightSegments = [];
-  var won = false;
-  var beamSource = { x: 0, y: 0 };
-  var holePos = { x: 0, y: 0, side: "top" };
-  var trayCards = [];
-
-  var BLOCK_DEFS = {
-    rect_s: { type: "rect", w: 65, h: 28, n: 1.5, label: "Rect S" },
-    rect_l: { type: "rect", w: 95, h: 32, n: 1.5, label: "Rect L" },
-    tri_s:  { type: "tri", size: 55, n: 1.8, label: "Prism S" },
-    tri_l:  { type: "tri", size: 80, n: 1.8, label: "Prism L" }
-  };
-
-  var LEVELS = [
-    { beam: 0.5, hole: { side: "right", pos: 0.5 }, blocks: ["tri_s"] },
-    { beam: 0.3, hole: { side: "right", pos: 0.4 }, blocks: ["tri_s", "tri_s"] },
-    { beam: 0.7, hole: { side: "left", pos: 0.35 }, blocks: ["rect_l", "tri_s"] },
-    { beam: 0.5, hole: { side: "left", pos: 0.5 }, blocks: ["tri_s", "rect_s"] },
-    { beam: 0.2, hole: { side: "right", pos: 0.6 }, blocks: ["tri_s", "tri_l", "rect_s"] },
-    { beam: 0.8, hole: { side: "left", pos: 0.4 }, blocks: ["rect_l", "tri_l", "tri_s"] },
-    { beam: 0.35, hole: { side: "right", pos: 0.3 }, blocks: ["tri_l", "tri_l", "rect_s", "rect_l"] },
-    { beam: 0.6, hole: { side: "left", pos: 0.25 }, blocks: ["rect_s", "tri_s", "tri_l", "rect_l"] }
-  ];
-
-  function loadLevel(idx) {
-    currentLevel = idx % LEVELS.length;
-    var lv = LEVELS[currentLevel];
-    won = false;
-    placedBlocks = [];
-    selectedBlock = null;
-    dragging = null;
-    var pb = H - TOOLBOX_H;
-    beamSource = { x: W * lv.beam, y: pb - 2 };
-    var pa = pb - TOPBAR_H;
-    if (lv.hole.side === "top") {
-      holePos = { x: W * lv.hole.pos, y: TOPBAR_H, side: "top" };
-    } else if (lv.hole.side === "left") {
-      holePos = { x: 0, y: TOPBAR_H + pa * lv.hole.pos, side: "left" };
-    } else {
-      holePos = { x: W, y: TOPBAR_H + pa * lv.hole.pos, side: "right" };
-    }
-    document.getElementById("level-badge").textContent = "Level " + (currentLevel + 1);
-    document.getElementById("win-overlay").classList.remove("show");
-    buildTray(lv.blocks);
-    traceLight();
+  if(s.walk){
+    const leg=document.createElement('div');
+    leg.className='leg';
+    leg.innerHTML=`<span class="walkicon">🚶</span> ${s.walk} min walk from the previous stop`;
+    list.appendChild(leg);
   }
+  const st=statusFor(s);
+  const hrsTxt=s.hours?`${fmt(s.hours[0])}–${fmt(s.hours[1])}`:'No fixed hours';
+  const costCls=s.free?'st-free':'';
+  const el=document.createElement('article');
+  el.className='stop'; el.id='stop-'+i;
+  el.innerHTML=`
+    <div class="idx">${String(i+1).padStart(2,'0')}<small>${s.finale?'Finish':(s.added?'Added':'Reel')}</small></div>
+    <div class="stop-body">
+      <h3>${s.name}</h3>
+      <div class="where">${s.area}</div>
+      <img class="photo" loading="lazy" src="${s.img}" alt="${s.name}" onerror="this.style.display='none'">
+      <div class="infobar">
+        <span class="chip status ${st.cls}"><span class="pip"></span>${st.txt}</span>
+        <span class="chip">🕑 Sat <b>${hrsTxt}</b></span>
+        <span class="chip ${costCls}">🏟 <b>${s.cost}</b></span>
+      </div>
+      <p class="blurb">${s.blurb}</p>
+      <div class="fact ${s.finale?'finale':''}"><b>Good to know</b>${s.fact}</div>
+      ${s.opt?`<span class="opt">↪ ${s.opt}</span>`:''}
+      <div class="links">
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name+' Paris')}" target="_blank" rel="noopener">Open in Maps ↗</a>
+      </div>
+    </div>`;
+  list.appendChild(el);
+});
 
-  function buildTray(keys) {
-    var tray = document.getElementById("block-tray");
-    tray.innerHTML = "";
-    trayCards = [];
-    for (var i = 0; i < keys.length; i++) {
-      var key = keys[i];
-      var def = BLOCK_DEFS[key];
-      var card = document.createElement("div");
-      card.className = "block-card " + (def.type === "rect" ? "rect" : "tri");
-      var svgContent;
-      if (def.type === "rect") {
-        svgContent = '<svg viewBox="0 0 32 32"><rect x="4" y="10" width="24" height="12" rx="1.5" fill="rgba(100,180,255,0.35)" stroke="rgba(100,180,255,0.8)" stroke-width="1.5"/></svg>';
-      } else {
-        svgContent = '<svg viewBox="0 0 32 32"><polygon points="16,5 29,27 3,27" fill="rgba(120,255,180,0.35)" stroke="rgba(120,255,180,0.8)" stroke-width="1.5"/></svg>';
-      }
-      card.innerHTML = svgContent + "<span>" + def.label + "</span>";
-      trayCards.push({ el: card, key: key, used: false, blockId: null });
-      tray.appendChild(card);
-    }
-  }
-
-  function markTrayUsed(idx, bid) {
-    if (trayCards[idx]) {
-      trayCards[idx].used = true;
-      trayCards[idx].blockId = bid;
-      trayCards[idx].el.classList.add("used");
-    }
-  }
-
-  function freeTraySlot(bid) {
-    for (var i = 0; i < trayCards.length; i++) {
-      if (trayCards[i].blockId === bid) {
-        trayCards[i].used = false;
-        trayCards[i].blockId = null;
-        trayCards[i].el.classList.remove("used");
-        break;
-      }
-    }
-  }
-
-  // === GEOMETRY ===
-  function rotPt(px, py, cx, cy, a) {
-    var c = Math.cos(a), s = Math.sin(a), dx = px - cx, dy = py - cy;
-    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
-  }
-
-  function getVerts(b) {
-    if (b.type === "rect") {
-      var hw = b.w / 2, hh = b.h / 2;
-      return [
-        rotPt(b.x - hw, b.y - hh, b.x, b.y, b.angle),
-        rotPt(b.x + hw, b.y - hh, b.x, b.y, b.angle),
-        rotPt(b.x + hw, b.y + hh, b.x, b.y, b.angle),
-        rotPt(b.x - hw, b.y + hh, b.x, b.y, b.angle)
-      ];
-    }
-    var h = b.size * Math.sqrt(3) / 2;
-    return [
-      rotPt(b.x, b.y - h * 2 / 3, b.x, b.y, b.angle),
-      rotPt(b.x + b.size / 2, b.y + h / 3, b.x, b.y, b.angle),
-      rotPt(b.x - b.size / 2, b.y + h / 3, b.x, b.y, b.angle)
-    ];
-  }
-
-  function getEdges(b) {
-    var v = getVerts(b);
-    var edges = [];
-    for (var i = 0; i < v.length; i++) {
-      edges.push({ p1: v[i], p2: v[(i + 1) % v.length] });
-    }
-    return edges;
-  }
-
-  function segHit(a1, a2, b1, b2) {
-    var dx1 = a2.x - a1.x, dy1 = a2.y - a1.y;
-    var dx2 = b2.x - b1.x, dy2 = b2.y - b1.y;
-    var den = dx1 * dy2 - dy1 * dx2;
-    if (Math.abs(den) < 1e-12) return null;
-    var t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / den;
-    var u = ((b1.x - a1.x) * dy1 - (b1.y - a1.y) * dx1) / den;
-    if (t > 0.002 && t < 0.998 && u > 0.002 && u < 0.998) {
-      return { x: a1.x + t * dx1, y: a1.y + t * dy1, t: t };
-    }
-    return null;
-  }
-
-  function pip(px, py, verts) {
-    var inside = false;
-    for (var i = 0, j = verts.length - 1; i < verts.length; j = i++) {
-      var xi = verts[i].x, yi = verts[i].y, xj = verts[j].x, yj = verts[j].y;
-      if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
-        inside = !inside;
-      }
-    }
-    return inside;
-  }
-
-  function vNorm(v) {
-    var l = Math.sqrt(v.x * v.x + v.y * v.y);
-    return l > 0 ? { x: v.x / l, y: v.y / l } : { x: 0, y: 0 };
-  }
-
-  function vDot(a, b) { return a.x * b.x + a.y * b.y; }
-
-  function reflectV(d, n) {
-    var dn = vDot(d, n);
-    return { x: d.x - 2 * dn * n.x, y: d.y - 2 * dn * n.y };
-  }
-
-  function refractV(d, n, n1, n2) {
-    var cosI = -vDot(d, n);
-    var nrm = { x: n.x, y: n.y };
-    var ni = n1, nt = n2;
-    if (cosI < 0) {
-      cosI = -cosI;
-      nrm = { x: -nrm.x, y: -nrm.y };
-      ni = n2;
-      nt = n1;
-    }
-    var r = ni / nt;
-    var sinT2 = r * r * (1 - cosI * cosI);
-    if (sinT2 > 1.0) return null;
-    var cosT = Math.sqrt(Math.max(0, 1 - sinT2));
-    return {
-      x: r * d.x + (r * cosI - cosT) * nrm.x,
-      y: r * d.y + (r * cosI - cosT) * nrm.y
-    };
-  }
-
-  // === LIGHT TRACING ===
-  function traceLight() {
-    lightSegments = [];
-    if (!W || !H) return;
-    var pb = H - TOOLBOX_H;
-    var origin = { x: beamSource.x, y: beamSource.y };
-    var dir = { x: 0, y: -1 };
-
-    var walls = [
-      { p1: { x: 0, y: TOPBAR_H }, p2: { x: W, y: TOPBAR_H } },
-      { p1: { x: 0, y: pb }, p2: { x: W, y: pb } },
-      { p1: { x: 0, y: TOPBAR_H }, p2: { x: 0, y: pb } },
-      { p1: { x: W, y: TOPBAR_H }, p2: { x: W, y: pb } }
-    ];
-
-    for (var bounce = 0; bounce < 40; bounce++) {
-      var far = { x: origin.x + dir.x * 3000, y: origin.y + dir.y * 3000 };
-      var best = null, bestDist = Infinity, bestBlock = null, bestEdge = null;
-
-      for (var bi = 0; bi < placedBlocks.length; bi++) {
-        var edges = getEdges(placedBlocks[bi]);
-        for (var ei = 0; ei < edges.length; ei++) {
-          var hit = segHit(origin, far, edges[ei].p1, edges[ei].p2);
-          if (hit) {
-            var d = Math.sqrt((hit.x - origin.x) * (hit.x - origin.x) + (hit.y - origin.y) * (hit.y - origin.y));
-            if (d > 1 && d < bestDist) {
-              bestDist = d; best = hit; bestBlock = placedBlocks[bi]; bestEdge = edges[ei];
-            }
-          }
-        }
-      }
-
-      for (var wi = 0; wi < walls.length; wi++) {
-        var whit = segHit(origin, far, walls[wi].p1, walls[wi].p2);
-        if (whit) {
-          var wd = Math.sqrt((whit.x - origin.x) * (whit.x - origin.x) + (whit.y - origin.y) * (whit.y - origin.y));
-          if (wd > 1 && wd < bestDist) {
-            bestDist = wd; best = whit; bestBlock = null; bestEdge = walls[wi];
-          }
-        }
-      }
-
-      if (!best) {
-        lightSegments.push({ from: origin, to: far, inside: false });
-        break;
-      }
-
-      var probe = { x: origin.x + dir.x * 3, y: origin.y + dir.y * 3 };
-      var insideBlock = null;
-      for (var pi = 0; pi < placedBlocks.length; pi++) {
-        if (pip(probe.x, probe.y, getVerts(placedBlocks[pi]))) {
-          insideBlock = placedBlocks[pi];
-          break;
-        }
-      }
-
-      lightSegments.push({ from: origin, to: best, inside: !!insideBlock });
-
-      if (!bestBlock) break;
-
-      var eDir = vNorm({ x: bestEdge.p2.x - bestEdge.p1.x, y: bestEdge.p2.y - bestEdge.p1.y });
-      var normal = { x: -eDir.y, y: eDir.x };
-      if (vDot(dir, normal) > 0) {
-        normal = { x: -normal.x, y: -normal.y };
-      }
-
-      var entering = !insideBlock || insideBlock.id !== bestBlock.id;
-      var n1 = entering ? 1.0 : bestBlock.n;
-      var n2 = entering ? bestBlock.n : 1.0;
-
-      var refr = refractV(dir, normal, n1, n2);
-      if (refr) {
-        dir = vNorm(refr);
-      } else {
-        dir = vNorm(reflectV(dir, normal));
-      }
-      origin = { x: best.x + dir.x * 1.0, y: best.y + dir.y * 1.0 };
-    }
-
-    checkWin();
-  }
-
-  function checkWin() {
-    if (won) return;
-    if (lightSegments.length === 0) return;
-    var last = lightSegments[lightSegments.length - 1];
-    var e = last.to;
-    var hit = false;
-    if (holePos.side === "top") hit = Math.abs(e.y - holePos.y) < 10 && Math.abs(e.x - holePos.x) < HOLE_SIZE;
-    if (holePos.side === "left") hit = Math.abs(e.x - holePos.x) < 10 && Math.abs(e.y - holePos.y) < HOLE_SIZE;
-    if (holePos.side === "right") hit = Math.abs(e.x - holePos.x) < 10 && Math.abs(e.y - holePos.y) < HOLE_SIZE;
-    if (hit) {
-      won = true;
-      setTimeout(function() {
-        document.getElementById("win-overlay").classList.add("show");
-      }, 500);
-    }
-  }
-
-  // === DRAWING ===
-  function draw(ts) {
-    ctx.clearRect(0, 0, W, H);
-    var pb = H - TOOLBOX_H;
-    var pulse = 0.7 + 0.3 * Math.sin((ts || 0) * 0.003);
-
-    ctx.fillStyle = "#0a0a14";
-    ctx.fillRect(0, 0, W, H);
-
-    // Grid dots
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
-    for (var gx = 20; gx < W; gx += 30) {
-      for (var gy = TOPBAR_H + 20; gy < pb; gy += 30) {
-        ctx.beginPath();
-        ctx.arc(gx, gy, 0.8, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Border
-    ctx.strokeStyle = "rgba(255,255,255,0.1)";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(0.5, TOPBAR_H + 0.5, W - 1, pb - TOPBAR_H - 1);
-
-    // Hole target
-    var hc = won ? "#40f080" : "#f0c040";
-    ctx.save();
-    var grd = ctx.createRadialGradient(holePos.x, holePos.y, 0, holePos.x, holePos.y, HOLE_SIZE * 2.5);
-    grd.addColorStop(0, (won ? "rgba(64,240,128," : "rgba(240,192,64,") + (0.25 * pulse) + ")");
-    grd.addColorStop(1, "transparent");
-    ctx.fillStyle = grd;
-    ctx.fillRect(holePos.x - 80, holePos.y - 80, 160, 160);
-    ctx.strokeStyle = hc;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = hc;
-    ctx.shadowBlur = 14 * pulse;
-    ctx.beginPath();
-    if (holePos.side === "top") {
-      ctx.moveTo(holePos.x - HOLE_SIZE, holePos.y);
-      ctx.lineTo(holePos.x + HOLE_SIZE, holePos.y);
-    } else {
-      ctx.moveTo(holePos.x, holePos.y - HOLE_SIZE);
-      ctx.lineTo(holePos.x, holePos.y + HOLE_SIZE);
-    }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = hc;
-    ctx.font = "bold 9px monospace";
-    ctx.textAlign = "center";
-    if (holePos.side === "top") {
-      ctx.fillText("TARGET", holePos.x, holePos.y + 14);
-    } else if (holePos.side === "left") {
-      ctx.save();
-      ctx.translate(holePos.x + 14, holePos.y);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText("TARGET", 0, 0);
-      ctx.restore();
-    } else {
-      ctx.save();
-      ctx.translate(holePos.x - 14, holePos.y);
-      ctx.rotate(Math.PI / 2);
-      ctx.fillText("TARGET", 0, 0);
-      ctx.restore();
-    }
-    ctx.restore();
-
-    // Light source
-    ctx.save();
-    var sg = ctx.createRadialGradient(beamSource.x, beamSource.y, 0, beamSource.x, beamSource.y, 20);
-    sg.addColorStop(0, "rgba(240,192,64,0.6)");
-    sg.addColorStop(1, "transparent");
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.arc(beamSource.x, beamSource.y, 20, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#f0c040";
-    ctx.beginPath();
-    ctx.arc(beamSource.x, beamSource.y, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.font = "bold 9px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("LIGHT", beamSource.x, beamSource.y + 18);
-    ctx.restore();
-
-    // Blocks
-    for (var bi = 0; bi < placedBlocks.length; bi++) {
-      var b = placedBlocks[bi];
-      var v = getVerts(b);
-      var isR = b.type === "rect";
-      var sel = selectedBlock && selectedBlock.id === b.id;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(v[0].x, v[0].y);
-      for (var vi = 1; vi < v.length; vi++) ctx.lineTo(v[vi].x, v[vi].y);
-      ctx.closePath();
-
-      var gf = ctx.createLinearGradient(v[0].x, v[0].y, v[v.length - 1].x, v[v.length - 1].y);
-      if (isR) {
-        gf.addColorStop(0, "rgba(100,180,255,0.12)");
-        gf.addColorStop(1, "rgba(100,180,255,0.22)");
-      } else {
-        gf.addColorStop(0, "rgba(120,255,180,0.12)");
-        gf.addColorStop(1, "rgba(120,255,180,0.22)");
-      }
-      ctx.fillStyle = gf;
-      ctx.fill();
-
-      ctx.strokeStyle = sel
-        ? (isR ? "rgba(100,180,255,1)" : "rgba(120,255,180,1)")
-        : (isR ? "rgba(100,180,255,0.45)" : "rgba(120,255,180,0.45)");
-      ctx.lineWidth = sel ? 2.5 : 1.5;
-      if (sel) {
-        ctx.shadowColor = isR ? "rgba(100,180,255,0.5)" : "rgba(120,255,180,0.5)";
-        ctx.shadowBlur = 10;
-      }
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      ctx.fillStyle = "rgba(255,255,255,0.45)";
-      ctx.font = "9px monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("n=" + b.n, b.x, b.y);
-      ctx.restore();
-    }
-
-    // Light beam
-    ctx.save();
-    for (var si = 0; si < lightSegments.length; si++) {
-      var seg = lightSegments[si];
-      ctx.beginPath();
-      ctx.moveTo(seg.from.x, seg.from.y);
-      ctx.lineTo(seg.to.x, seg.to.y);
-      ctx.strokeStyle = seg.inside ? "rgba(130,200,255,0.85)" : "rgba(240,192,64,0.85)";
-      ctx.lineWidth = seg.inside ? 2 : 2.5;
-      ctx.shadowColor = seg.inside ? "rgba(130,200,255,0.5)" : "rgba(240,192,64,0.5)";
-      ctx.shadowBlur = 10;
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-    for (var di = 1; di < lightSegments.length; di++) {
-      var pt = lightSegments[di].from;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-    }
-
-    if (won && lightSegments.length > 0) {
-      var last = lightSegments[lightSegments.length - 1];
-      var ld = vNorm({ x: last.to.x - last.from.x, y: last.to.y - last.from.y });
-      ctx.beginPath();
-      ctx.moveTo(last.to.x, last.to.y);
-      ctx.lineTo(last.to.x + ld.x * 60, last.to.y + ld.y * 60);
-      ctx.strokeStyle = "rgba(64,240,128,0.8)";
-      ctx.lineWidth = 3;
-      ctx.shadowColor = "rgba(64,240,128,0.6)";
-      ctx.shadowBlur = 16;
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    requestAnimationFrame(draw);
-  }
-
-  // === INTERACTION ===
-  var lastTapTime = 0, lastTapBlockId = null;
-
-  function blockAt(x, y) {
-    for (var i = placedBlocks.length - 1; i >= 0; i--) {
-      if (pip(x, y, getVerts(placedBlocks[i]))) return placedBlocks[i];
-    }
-    return null;
-  }
-
-  function hitTrayCard(x, y) {
-    for (var i = 0; i < trayCards.length; i++) {
-      if (trayCards[i].used) continue;
-      var r = trayCards[i].el.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
-    }
-    return -1;
-  }
-
-  function spawnFromTray(idx, x, y) {
-    var def = BLOCK_DEFS[trayCards[idx].key];
-    var pb = H - TOOLBOX_H;
-    var block = {
-      id: Date.now() + Math.random(),
-      key: trayCards[idx].key,
-      type: def.type,
-      x: x,
-      y: Math.min(y, pb - 40),
-      angle: 0,
-      n: def.n,
-      w: def.w || 0,
-      h: def.h || 0,
-      size: def.size || 0
-    };
-    placedBlocks.push(block);
-    markTrayUsed(idx, block.id);
-    dragging = block;
-    selectedBlock = block;
-    dragOffset = { x: 0, y: 0 };
-    traceLight();
-  }
-
-  function ptrDown(x, y) {
-    if (won) return;
-    var pb = H - TOOLBOX_H;
-
-    var ti = hitTrayCard(x, y);
-    if (ti >= 0) {
-      spawnFromTray(ti, x, y);
-      return;
-    }
-
-    if (y > pb) return;
-
-    var block = blockAt(x, y);
-    if (block) {
-      var now = Date.now();
-      if (lastTapBlockId === block.id && now - lastTapTime < 400) {
-        placedBlocks = placedBlocks.filter(function(b) { return b.id !== block.id; });
-        freeTraySlot(block.id);
-        selectedBlock = null;
-        dragging = null;
-        lastTapBlockId = null;
-        traceLight();
-        return;
-      }
-      lastTapTime = now;
-      lastTapBlockId = block.id;
-
-      if (selectedBlock && selectedBlock.id === block.id && !dragging) {
-        block.angle += Math.PI / 12;
-        traceLight();
-        return;
-      }
-
-      selectedBlock = block;
-      dragging = block;
-      dragOffset = { x: block.x - x, y: block.y - y };
-    } else {
-      selectedBlock = null;
-      lastTapBlockId = null;
-    }
-  }
-
-  function ptrMove(x, y) {
-    if (!dragging) return;
-    var pb = H - TOOLBOX_H;
-    dragging.x = Math.max(10, Math.min(W - 10, x + dragOffset.x));
-    dragging.y = Math.max(TOPBAR_H + 10, Math.min(pb - 10, y + dragOffset.y));
-    traceLight();
-  }
-
-  function ptrUp(x, y) {
-    if (dragging) {
-      var pb = H - TOOLBOX_H;
-      if (y > pb - 10) {
-        placedBlocks = placedBlocks.filter(function(b) { return b.id !== dragging.id; });
-        freeTraySlot(dragging.id);
-        selectedBlock = null;
-        traceLight();
-      }
-    }
-    dragging = null;
-  }
-
-  canvas.addEventListener("touchstart", function(e) {
-    e.preventDefault();
-    var t = e.touches[0];
-    ptrDown(t.clientX, t.clientY);
-  }, { passive: false });
-
-  canvas.addEventListener("touchmove", function(e) {
-    e.preventDefault();
-    var t = e.touches[0];
-    ptrMove(t.clientX, t.clientY);
-  }, { passive: false });
-
-  canvas.addEventListener("touchend", function(e) {
-    e.preventDefault();
-    var t = e.changedTouches[0];
-    ptrUp(t.clientX, t.clientY);
-  }, { passive: false });
-
-  canvas.addEventListener("mousedown", function(e) { ptrDown(e.clientX, e.clientY); });
-  canvas.addEventListener("mousemove", function(e) { if (dragging) ptrMove(e.clientX, e.clientY); });
-  canvas.addEventListener("mouseup", function(e) { ptrUp(e.clientX, e.clientY); });
-
-  var toolbox = document.getElementById("toolbox");
-  toolbox.addEventListener("touchstart", function(e) {
-    var t = e.touches[0];
-    var ti = hitTrayCard(t.clientX, t.clientY);
-    if (ti >= 0) {
-      e.preventDefault();
-      ptrDown(t.clientX, t.clientY);
-    }
-  }, { passive: false });
-
-  toolbox.addEventListener("touchmove", function(e) {
-    if (dragging) {
-      e.preventDefault();
-      var t = e.touches[0];
-      ptrMove(t.clientX, t.clientY);
-    }
-  }, { passive: false });
-
-  toolbox.addEventListener("touchend", function(e) {
-    if (dragging) {
-      e.preventDefault();
-      var t = e.changedTouches[0];
-      ptrUp(t.clientX, t.clientY);
-    }
-  }, { passive: false });
-
-  document.getElementById("btn-reset").addEventListener("click", function() { loadLevel(currentLevel); });
-  document.getElementById("btn-info").addEventListener("click", function() { document.getElementById("info-overlay").classList.add("show"); });
-  document.getElementById("btn-start").addEventListener("click", function() { document.getElementById("info-overlay").classList.remove("show"); });
-  document.getElementById("next-btn").addEventListener("click", function() { loadLevel(currentLevel + 1); });
-
-  resize();
-  loadLevel(0);
-  requestAnimationFrame(draw);
-})();
+const map=L.map('map',{scrollWheelZoom:false}).setView([48.866,2.333],12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© OpenStreetMap, © CARTO', maxZoom:19}).addTo(map);
+const pts=[];
+STOPS.forEach((s,i)=>{
+  pts.push([s.lat,s.lng]);
+  const c=ZONES[s.z].color;
+  const icon=L.divIcon({className:'',html:`<div style="background:${c};color:#fff;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);font-family:Inter,sans-serif;font-size:12px;font-weight:600;"><span style="transform:rotate(45deg)">${i+1}</span></div>`,iconSize:[30,30],iconAnchor:[15,28],popupAnchor:[0,-26]});
+  L.marker([s.lat,s.lng],{icon}).addTo(map)
+    .bindPopup(`<b>${i+1}. ${s.name}</b><br><span style="color:#777">${s.area}</span>`)
+    .on('click',()=>document.getElementById('stop-'+i).scrollIntoView({behavior:'smooth'}));
+});
+for(let i=0;i<pts.length-1;i++){
+  L.polyline([pts[i],pts[i+1]],{color:ZONES[STOPS[i].z].color,weight:3,opacity:.55,dashArray:'2,8',lineCap:'round'}).addTo(map);
+}
+map.fitBounds(L.latLngBounds(pts).pad(.1));
 </script>
 </body>
 </html>
