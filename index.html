@@ -1,730 +1,1372 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-<title>Refract!</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%; height: 100%; overflow: hidden; background: #0a0a14;
-    font-family: system-ui, -apple-system, sans-serif; color: #e0e0f0;
-    -webkit-user-select: none; user-select: none; touch-action: none;
-  }
-  #app { width: 100%; height: 100%; position: relative; }
-  #topbar {
-    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px;
-    background: linear-gradient(to bottom, rgba(10,10,20,0.95) 60%, transparent);
-    pointer-events: none;
-  }
-  #topbar > * { pointer-events: auto; }
-  #topbar h1 { font-size: 15px; font-weight: 700; color: #f0c040; letter-spacing: 2px; text-transform: uppercase; font-family: monospace; }
-  #level-badge { font-family: monospace; font-size: 11px; color: #6a6a8a; background: #12121f; padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
-  #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  #toolbox {
-    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
-    background: linear-gradient(to top, rgba(10,10,20,0.98) 70%, transparent);
-    padding: 6px 12px 14px;
-  }
-  #toolbox-label { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #6a6a8a; margin-bottom: 6px; font-family: monospace; }
-  #block-tray { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-  .block-card {
-    flex-shrink: 0; width: 66px; height: 66px; border-radius: 12px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px; cursor: grab; transition: transform 0.15s, opacity 0.2s;
-  }
-  .block-card.rect { background: rgba(100,180,255,0.2); border: 1.5px solid rgba(100,180,255,0.5); }
-  .block-card.tri { background: rgba(120,255,180,0.2); border: 1.5px solid rgba(120,255,180,0.5); }
-  .block-card.used { opacity: 0.25; pointer-events: none; }
-  .block-card svg { width: 28px; height: 28px; }
-  .block-card span { font-size: 8px; font-family: monospace; color: #6a6a8a; }
-  #controls-row { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
-  .btn {
-    background: #12121f; border: 1px solid rgba(255,255,255,0.1); color: #e0e0f0;
-    font-family: system-ui, sans-serif; font-size: 12px; padding: 5px 12px; border-radius: 8px; cursor: pointer;
-  }
-  .btn:active { background: rgba(255,255,255,0.08); }
-  #rotate-hint { font-size: 9px; color: #6a6a8a; font-family: monospace; margin-left: auto; }
-  .overlay {
-    display: none; position: absolute; inset: 0; z-index: 50;
-    flex-direction: column; align-items: center; justify-content: center;
-    gap: 14px;
-  }
-  .overlay.show { display: flex; }
-  #win-overlay { background: rgba(10,10,20,0.92); }
-  #win-overlay h2 { font-family: monospace; font-size: 26px; color: #40f080; letter-spacing: 3px; }
-  #win-overlay p { color: #6a6a8a; font-size: 13px; text-align: center; max-width: 260px; }
-  .action-btn {
-    margin-top: 10px; background: #f0c040; color: #0a0a14; font-weight: 700; font-size: 14px;
-    padding: 11px 28px; border: none; border-radius: 12px; cursor: pointer;
-    font-family: monospace; letter-spacing: 1px;
-  }
-  #info-overlay { background: rgba(10,10,20,0.96); padding: 28px; }
-  #info-overlay h2 { font-family: monospace; font-size: 18px; color: #f0c040; margin-bottom: 4px; }
-  #info-overlay p { color: #c0c0d8; font-size: 13px; line-height: 1.6; text-align: center; max-width: 300px; }
-  .val { color: #f0c040; font-weight: 700; }
-  #info-overlay .action-btn { font-size: 13px; padding: 10px 24px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Europe Holiday 2026 - Family Itinerary</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --accent2: #3498db;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --muted: #7f8c8d;
+            --border: #dee2e6;
+            --success: #27ae60;
+            --warning: #f39c12;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #34495e 100%);
+            color: white; padding: 24px 32px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            transition: padding 0.25s ease;
+        }
+        .header.scrolled { padding: 10px 16px; }
+        .header h1 { font-size: 1.6rem; font-weight: 700; transition: font-size 0.25s ease; }
+        .header.scrolled h1 { font-size: 1.1rem; }
+        .header .subtitle { font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
+        .header-actions { display: flex; gap: 6px; align-items: center; }
+        .header-actions button, .nav-btn {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+            color: white; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+            font-size: 0.78rem; transition: all 0.2s; white-space: nowrap;
+            text-decoration: none; display: inline-block; font-family: inherit;
+        }
+        .header-actions button:hover, .nav-btn:hover { background: rgba(255,255,255,0.25); }
+        .header-actions button.active, .nav-btn.active { background: var(--accent); border-color: var(--accent); }
+
+        /* Maps dropdown */
+        .maps-dropdown { position: relative; }
+        .maps-menu {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0;
+            background: #2c3e50; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; overflow: hidden; min-width: 150px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3); z-index: 2000;
+        }
+        .maps-dropdown.open .maps-menu { display: block; }
+        .maps-menu a {
+            display: block; color: white; text-decoration: none;
+            padding: 10px 14px; font-size: 0.82rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            transition: background 0.15s;
+        }
+        .maps-menu a:last-child { border-bottom: none; }
+        .maps-menu a:hover { background: rgba(255,255,255,0.15); }
+        .maps-menu a.active { background: var(--accent); }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .main-layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+
+        .sidebar { position: sticky; top: 100px; height: fit-content; max-height: calc(100vh - 120px); overflow-y: auto; }
+        .day-list { display: flex; flex-direction: column; gap: 8px; }
+        .day-card {
+            background: var(--card); border-radius: 10px; padding: 14px 16px;
+            cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .day-card:hover { border-color: var(--accent2); transform: translateX(4px); }
+        .day-card.active { border-color: var(--accent); background: #fef5f5; }
+        .day-card .day-num { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+        .day-card .day-date { font-size: 0.95rem; font-weight: 600; margin: 2px 0; }
+        .day-card .day-location { font-size: 0.82rem; color: var(--muted); }
+        .day-card .day-overview { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        .day-card .tag {
+            font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+            background: #eef2ff; color: var(--accent2);
+        }
+        .day-card .tag.transport { background: #fef3c7; color: #92400e; }
+        .day-card .tag.hotel { background: #d1fae5; color: #065f46; }
+
+        .section-divider {
+            background: linear-gradient(135deg, var(--accent2), #2980b9);
+            color: white; border-radius: 10px; padding: 12px 16px;
+            font-weight: 700; font-size: 0.9rem; text-align: center;
+            margin: 4px 0;
+        }
+
+
+
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card {
+            background: var(--card); border-radius: 10px; padding: 16px;
+            text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .stat-card .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+        .stat-card .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+        #map {
+            height: 400px; border-radius: 12px; margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 1;
+        }
+
+        .main-content { min-width: 0; overflow-y: auto; max-height: calc(100vh - 120px); scroll-behavior: smooth; }
+        .day-detail { opacity: 0.45; transition: opacity 0.3s; }
+        .day-detail.selected { opacity: 1; }
+        .day-header {
+            background: var(--card); border-radius: 12px; padding: 24px;
+            margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            cursor: pointer;
+        }
+        .day-detail.selected .day-header { border-left: 4px solid var(--accent); }
+        .day-header h2 { font-size: 1.4rem; margin-bottom: 4px; }
+        .day-header .location { color: var(--accent2); font-size: 1rem; }
+        .day-header .accom-badge {
+            display: inline-block; margin-top: 6px; font-size: 0.8rem;
+            color: var(--success); font-weight: 600;
+        }
+
+        .timeline { position: relative; padding-left: 32px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 12px; top: 0; bottom: 0;
+            width: 2px; background: var(--border);
+        }
+        .timeline-item {
+            position: relative; background: var(--card); border-radius: 10px;
+            padding: 18px 20px; margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -26px; top: 22px;
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid var(--accent2); background: white;
+        }
+        .timeline-item.transport::before { border-color: var(--warning); background: var(--warning); }
+        .timeline-item.hotel::before { border-color: var(--success); background: var(--success); }
+        .timeline-item.activity::before { border-color: var(--accent2); background: var(--accent2); }
+        .timeline-item.food::before { border-color: var(--accent); background: var(--accent); }
+
+        .item-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+        .item-time { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+        .item-type {
+            font-size: 0.7rem; padding: 2px 10px; border-radius: 10px;
+            font-weight: 600; text-transform: uppercase;
+        }
+        .item-type.transport { background: #fef3c7; color: #92400e; }
+        .item-type.hotel { background: #d1fae5; color: #065f46; }
+        .item-type.activity { background: #eef2ff; color: #3730a3; }
+        .item-type.food { background: #fee2e2; color: #991b1b; }
+        .item-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+        .item-details { font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
+        .item-details .booking-ref { font-family: monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+        .item-cost { margin-top: 8px; font-weight: 600; color: var(--accent); }
+        .item-status {
+            font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;
+        }
+        .item-status.confirmed { background: #d1fae5; color: #065f46; }
+        .item-status.pending { background: #fef3c7; color: #92400e; }
+
+        .pin-number {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--accent2); color: white; font-size: 0.75rem;
+            font-weight: 700; margin-right: 8px; flex-shrink: 0;
+        }
+        .timeline-item.transport .pin-number { background: var(--warning); }
+        .timeline-item.hotel .pin-number { background: var(--success); }
+        .timeline-item.activity .pin-number { background: var(--accent2); }
+        .timeline-item.food .pin-number { background: var(--accent); }
+        .item-title-row { display: flex; align-items: center; margin-bottom: 4px; }
+
+        .bookings-panel {
+            background: var(--card); border-radius: 12px; padding: 24px;
+            margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .bookings-panel h3 { margin-bottom: 16px; font-size: 1.1rem; }
+        .booking-table { width: 100%; border-collapse: collapse; }
+        .booking-table th {
+            text-align: left; padding: 10px 12px; background: #f8f9fa;
+            font-size: 0.8rem; color: var(--muted); text-transform: uppercase;
+            border-bottom: 2px solid var(--border);
+        }
+        .booking-table td {
+            padding: 10px 12px; border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .booking-table tr:hover { background: #f8f9fa; }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+        .status.confirmed { background: #d1fae5; color: #065f46; }
+        .status.pending { background: #fef3c7; color: #92400e; }
+        .status.not-booked { background: #fee2e2; color: #991b1b; }
+
+        .view-content { display: none; }
+        .view-content.active { display: block; }
+
+        .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .notes-panel {
+            background: var(--card); border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .notes-panel.full-width { grid-column: 1 / -1; }
+        .notes-panel h3 { font-size: 1.1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .notes-panel h3 .panel-icon { font-size: 1.2rem; }
+        .notes-panel h4 { font-size: 0.95rem; margin: 16px 0 8px; color: var(--accent2); }
+        .notes-panel ul { list-style: none; padding: 0; }
+        .notes-panel li {
+            padding: 10px 12px; border-bottom: 1px solid var(--border);
+            font-size: 0.9rem; line-height: 1.5;
+        }
+        .notes-panel li:last-child { border-bottom: none; }
+        .notes-panel li .note-label {
+            font-weight: 600; display: block; margin-bottom: 2px;
+        }
+        .notes-panel li .note-meta {
+            font-size: 0.8rem; color: var(--muted);
+        }
+        .notes-panel li .note-link {
+            font-size: 0.8rem; color: var(--accent2); text-decoration: none;
+        }
+        .notes-panel li .note-link:hover { text-decoration: underline; }
+        .notes-panel .booking-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+            margin-left: 6px;
+        }
+        .booking-badge.urgent { background: #fee2e2; color: #991b1b; }
+        .booking-badge.soon { background: #fef3c7; color: #92400e; }
+        .booking-badge.flexible { background: #eef2ff; color: #3730a3; }
+        .tip-source { font-size: 0.75rem; color: var(--muted); font-style: italic; margin-bottom: 12px; }
+        @media (max-width: 900px) {
+            .notes-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .sidebar { position: static; max-height: none; }
+            .day-list { flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
+            .day-card { min-width: 200px; }
+            .section-divider { min-width: 200px; }
+        }
+        @media print {
+            .header { position: static; }
+            .sidebar { display: none; }
+            .main-layout { grid-template-columns: 1fr; }
+            #map { height: 300px; }
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-  <div id="topbar"><h1>Refract!</h1><span id="level-badge">Level 1</span></div>
-  <canvas id="gameCanvas"></canvas>
-  <div id="toolbox">
-    <div id="toolbox-label">Drag blocks onto the board</div>
-    <div id="block-tray"></div>
-    <div id="controls-row">
-      <button class="btn" id="btn-reset">Reset</button>
-      <button class="btn" id="btn-info">Help</button>
-      <span id="rotate-hint">Tap block = rotate</span>
+
+<div class="header">
+    <div>
+        <h1>Europe Holiday 2026</h1>
     </div>
-  </div>
-  <div class="overlay" id="win-overlay">
-    <h2>SOLVED</h2>
-    <p>Light reached the target!</p>
-    <button class="action-btn" id="next-btn">NEXT LEVEL</button>
-  </div>
-  <div class="overlay show" id="info-overlay">
-    <h2>Refract!</h2>
-    <p>Guide a <span class="val">beam of light</span> from the bottom to the <span class="val">target hole</span> on the edge of the screen.</p>
-    <p><span class="val">Drag</span> glass blocks from the tray onto the board. Light bends when entering glass and reflects at steep angles.</p>
-    <p><span class="val">Tap</span> a placed block to rotate it. <span class="val">Double-tap</span> to remove it.</p>
-    <p>Rectangles: n=<span class="val">1.5</span> Prisms: n=<span class="val">1.8</span></p>
-    <button class="action-btn" id="btn-start">START PLAYING</button>
-  </div>
+    <div class="header-actions">
+        <button class="active" onclick="showView('itinerary')">Itinerary</button>
+        <button onclick="showView('bookings')">Bookings</button>
+        <button onclick="showView('notes')">Notes</button>
+        <a href="calendar.html" class="nav-btn">Calendar</a>
+        <div class="maps-dropdown" id="maps-dropdown">
+            <button class="nav-btn" onclick="toggleMapsMenu(event)">Maps ▾</button>
+            <div class="maps-menu">
+                <a href="#" onclick="showView('map');closeMapsMenu();return false;">Full Map</a>
+                <a href="london.html">London</a>
+                <a href="paris.html">Paris</a>
+                <a href="venice.html">Venice</a>
+                <a href="bologna.html">Bologna</a>
+                <a href="rome.html">Rome</a>
+                <a href="amalfi.html">Amalfi Coast</a>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="container">
+    <!-- ITINERARY VIEW -->
+    <div id="view-itinerary" class="view-content active">
+        <div class="stats-row" id="stats-row"></div>
+        <div id="map"></div>
+        <div class="main-layout">
+            <div class="sidebar">
+                <div class="day-list" id="day-list"></div>
+            </div>
+            <div class="main-content" id="day-details"></div>
+        </div>
+    </div>
+
+    <!-- BOOKINGS VIEW -->
+    <div id="view-bookings" class="view-content">
+        <div class="bookings-panel">
+            <h3>Transport Bookings</h3>
+            <table class="booking-table" id="transport-table">
+                <thead><tr><th>Date</th><th>Type</th><th>Route</th><th>Details</th><th>Ref</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="bookings-panel">
+            <h3>Hotel / Accommodation Bookings</h3>
+            <table class="booking-table" id="hotel-table">
+                <thead><tr><th>Dates</th><th>Hotel</th><th>Location</th><th>Room</th><th>Ref</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MAP VIEW -->
+    <div id="view-map" class="view-content">
+        <div id="full-map" style="height: 75vh; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+    </div>
+
+    <!-- NOTES VIEW -->
+    <div id="view-notes" class="view-content">
+        <div class="notes-grid">
+
+            <!-- OUTSTANDING BOOKINGS -->
+            <div class="notes-panel">
+                <h3><span class="panel-icon">&#x1f4cb;</span> Outstanding Bookings</h3>
+
+                <h4>Accommodation (Not Booked)</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Amalfi Coast - 2 nights <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">6-8 Jul &middot; Family room / villa &middot; High season - limited availability</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Sorrento - 1 night <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">8-9 Jul &middot; Family room &middot; Base for Capri day trip</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Rosa's House Rome Airport - 1 night <span class="booking-badge confirmed">Confirmed</span></span>
+                        <span class="note-meta">9-10 Jul &middot; Airport hotel &middot; Early flight next morning</span>
+                    </li>
+                </ul>
+
+                <h4>Transport (Not Booked)</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Train: Venice &rarr; Bologna <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">1 Jul ~11:00 &middot; Trenitalia ~1hr 20min</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Train: Bologna &rarr; Rome <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">3 Jul ~10:00 &middot; Frecciarossa ~2hr</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Train: Rome &rarr; Naples <span class="booking-badge soon">Book 2-4 weeks ahead</span></span>
+                        <span class="note-meta">6 Jul morning &middot; Frecciarossa ~1hr 10min</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Circumvesuviana trains (Naples-Pompeii-Sorrento) <span class="booking-badge flexible">Buy on day</span></span>
+                        <span class="note-meta">6 Jul &middot; No advance booking needed &middot; Buy at station</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Ferry: Sorrento &harr; Capri (day trip) <span class="booking-badge flexible">Buy on day</span></span>
+                        <span class="note-meta">9 Jul &middot; 8-9am out, 2-3pm return</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Amalfi &rarr; Sorrento ferry/bus <span class="booking-badge flexible">Buy on day</span></span>
+                        <span class="note-meta">8 Jul morning &middot; SITA bus or ferry along coast</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Sorrento &rarr; Rome (via Naples) <span class="booking-badge soon">Book 2-4 weeks ahead</span></span>
+                        <span class="note-meta">9 Jul ~16:00 &middot; Train to Naples then Frecciarossa to Rome</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Rome airport transfer <span class="booking-badge flexible">Flexible</span></span>
+                        <span class="note-meta">10 Jul 07:30 &middot; Hotel to Fiumicino (FCO)</span>
+                    </li>
+                </ul>
+
+                <h4>Tickets &amp; Activities (Not Booked)</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Tower of London <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">21 Jun &middot; Crown Jewels &middot; Timed entry sells out</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Sky Garden (free) <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">21 Jun &middot; Free but timed tickets required</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Windsor Castle <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">23 Jun &middot; Day trip from London</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Matilda - West End <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">23 Jun evening &middot; Cambridge Theatre &middot; 5 seats together</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Westminster Abbey <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">24 Jun</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Cabinet War Rooms <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">24 Jun &middot; Churchill's wartime HQ</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Madame Tussauds <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">26 Jun morning &middot; Skip-the-line tickets much cheaper online</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Eiffel Tower (summit access) <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">27 Jun &middot; Summit tickets sell out weeks ahead</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Seine River cruise <span class="booking-badge flexible">Flexible</span></span>
+                        <span class="note-meta">27 Jun afternoon</span>
+                    </li>
+                    <li>
+                        <span class="note-label">The Louvre (timed entry) <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">28 Jun morning &middot; Timed slots sell out</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Sainte-Chapelle <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">28 Jun afternoon</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Doge's Palace, Venice <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">30 Jun afternoon</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Colosseum, Roman Forum &amp; Palatine Hill <span class="booking-badge urgent">Book soon</span></span>
+                        <span class="note-meta">4 Jul &middot; Combined ticket &middot; Dave says book as early as possible. Go early morning or sunset.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Vatican Museums — Guided Tour <span class="booking-badge confirmed">Confirmed</span></span>
+                        <span class="note-meta">4 Jul 10:30 &middot; Booking 2L2N0NBD7WTNZPQHQ &middot; 5 pax &middot; Arrive Viale Vaticano by 10:00</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Pompeii <span class="booking-badge soon">Book ahead</span></span>
+                        <span class="note-meta">6 Jul midday &middot; Timed entry</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- DAVE'S TRAVEL TIPS -->
+            <div class="notes-panel">
+                <h3><span class="panel-icon">&#x1f4ac;</span> Dave Robertson's Travel Tips</h3>
+                <p class="tip-source">From Dave &amp; family's Europe trip &mdash; emails forwarded 30 Mar / 12 Apr 2026</p>
+
+                <h4>London</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Kids loved these</span>
+                        <span class="note-meta">Natural History Museum, Science Museum, Hummingbird Bakery, Harrods, riding red buses &amp; the Tube, Sainsbury's meal deal in a park, Buckingham Palace tour, Changing of the Guard, Matilda musical, M&amp;M factory, HMS Belfast, Churchill War Rooms, London Eye, Big Ben.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Churchill War Rooms combo deal</span>
+                        <span class="note-meta">There's a deal combining Churchill War Rooms + HMS Belfast + Windsor Castle &mdash; worth checking.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Camden Town</span>
+                        <span class="note-meta">Dave thinks the kids would've liked Camden &mdash; it's on our itinerary Day 1!</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Sky Garden / similar</span>
+                        <span class="note-meta">Dave recommends Sky Garden or "a similar experience" for rooftop views. Free but needs booking.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Traditional pub lunch</span>
+                        <span class="note-meta">A classic London experience &mdash; fit one in during a free afternoon.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Borough Markets</span>
+                        <span class="note-meta">Dave's kids weren't fans (busy + jetlagged) &mdash; worth considering timing given we arrive Day 1.</span>
+                    </li>
+                </ul>
+
+                <h4>Paris &mdash; Day 1 suggestions (from Dave)</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Arc de Triomphe &mdash; climb to top</span>
+                        <span class="note-meta">€32, 284 steps, open 10am-11pm. 30 min walk from Eiffel Tower or quick metro. Worth doing for the views.</span>
+                        <a class="note-link" href="https://www.paris-arc-de-triomphe.fr/en" target="_blank">paris-arc-de-triomphe.fr</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Walk Champs-Elysées + Le Marché des Enfants Rouges</span>
+                        <span class="note-meta">Oldest food market in Paris, on the way to Montmartre. Good lunch option.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Montmartre &amp; Sacré-Coeur</span>
+                        <span class="note-meta">Sit on the steps, check out artists' stalls. Watch for conmen/pickpockets at Sacré-Coeur.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Moulin Rouge (show only from 9pm)</span>
+                        <span class="note-meta">Dinner &amp; show from 7pm. Needs advance booking.</span>
+                        <a class="note-link" href="https://reservations.moulinrouge.fr/en" target="_blank">moulinrouge.fr</a>
+                    </li>
+                </ul>
+
+                <h4>Paris &mdash; Day 2 suggestions (from Dave)</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Notre-Dame Cathedral</span>
+                        <span class="note-meta">Free entry, open 8am-7pm. Reserve online. Tour ~30 mins.</span>
+                        <a class="note-link" href="https://www.notredamedeparis.fr/en/" target="_blank">notredamedeparis.fr</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Macaroon cooking class &mdash; Maison Flueret</span>
+                        <span class="note-meta">9am, 2.5 hours. 3 Rue des 3 Portes, 75005. Dave's family booked this.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Eiffel Tower at 12:30pm</span>
+                        <span class="note-meta">Book level 2 via lift, then up to top. Allow 3 hours. Can walk down from 2nd level (674 steps).</span>
+                        <a class="note-link" href="https://www.toureiffel.paris/en/rates-opening-times" target="_blank">toureiffel.paris</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Louvre</span>
+                        <span class="note-meta">Book timed tickets in advance (€44, kids free). Mona Lisa, Venus de Milo, Winged Victory. Free entry first Friday of the month 6-9pm.</span>
+                        <a class="note-link" href="https://www.louvre.fr/en" target="_blank">louvre.fr</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Sunset Seine cruise at 5pm</span>
+                        <span class="note-meta">Book open ticket in advance. Eiffel Tower lights show every hour after dark.</span>
+                        <a class="note-link" href="https://www.vedettesdupontneuf.com/home/" target="_blank">vedettesdupontneuf.com</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Dinner in Le Marais</span>
+                        <span class="note-meta">Our Airbnb is in Le Marais &mdash; great restaurants nearby.</span>
+                    </li>
+                </ul>
+
+                <h4>Paris &mdash; Optional extras</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Galeries Lafayette Haussmann rooftop</span>
+                        <span class="note-meta">Free rooftop views across Opera Garnier, Eiffel Tower and Montmartre.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Jardin du Luxembourg</span>
+                        <span class="note-meta">Near Notre-Dame and the cooking class area.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Catacombs</span>
+                        <span class="note-meta">€29, open 9:45am-8:30pm, ~20 min from Notre-Dame by metro. Allow 45 mins.</span>
+                        <a class="note-link" href="https://www.catacombes.paris.fr/en" target="_blank">catacombes.paris.fr</a>
+                    </li>
+                </ul>
+
+                <h4>Rome</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Colosseum &mdash; book early, avoid midday</span>
+                        <span class="note-meta">Book through "Walks" or "Liv Tours" (smaller groups, great reviews). Go first thing or at sunset.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Vatican &mdash; book a tour</span>
+                        <span class="note-meta">Dave walked past but couldn't get in without booking. Prioritise Sistine Chapel. Consider Liv Tours.</span>
+                    </li>
+                    <li>
+                        <span class="note-label">Cooking class at Eat &amp; Walk Italy</span>
+                        <span class="note-meta">Kids loved it &mdash; make pasta and tiramisu from scratch.</span>
+                        <a class="note-link" href="https://www.eatandwalkitaly.it/cooking-classes-rome/" target="_blank">eatandwalkitaly.it</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Trastevere, Trevi Fountain (go early), Spanish Steps</span>
+                        <span class="note-meta">Trastevere great for wandering. Trevi gets very crowded &mdash; go at sunrise. Spanish Steps: get a gelato &amp; people watch.</span>
+                    </li>
+                    <li><span class="note-label">Best pizza: Dar Poeta</span> <a class="note-link" href="https://www.darpoeta.com/en/home-2/" target="_blank">darpoeta.com</a></li>
+                    <li><span class="note-label">Best value: Trattoria Luzzi</span> <span class="note-meta">Via Celimontana 1 &mdash; "went back 3 times".</span> <a class="note-link" href="https://www.trattorialuzzi.it/" target="_blank">trattorialuzzi.it</a></li>
+                    <li><span class="note-label">Best gelato: Il Gelato di Costanza</span> <a class="note-link" href="https://maps.app.goo.gl/Xr7pNq18rM7HehFx6" target="_blank">Google Maps</a></li>
+                </ul>
+
+                <h4>Bologna</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Full-day Food &amp; Wine Tour</span>
+                        <span class="note-meta">Parmesan, balsamic &amp; prosciutto factories + feast with wine. Highly recommended.</span>
+                        <a class="note-link" href="https://www.italiandays.it/" target="_blank">italiandays.it &mdash; Bologna Food and Wine Tour #1</a>
+                    </li>
+                    <li>
+                        <span class="note-label">Portico of St Luke (666 arches)</span>
+                        <span class="note-meta">Kids may prefer the tourist train.</span>
+                        <a class="note-link" href="https://cityredbus.com/en/san-luca-express/" target="_blank">San Luca Express</a>
+                    </li>
+                    <li><span class="note-label">Best gelato: Crememeria la Vecchia Stella</span> <a class="note-link" href="https://maps.app.goo.gl/jFm8vDav5SPQ6RGU9" target="_blank">Google Maps</a></li>
+                    <li><span class="note-label">Pastries: Pasticceria Regina di Quadri</span> <a class="note-link" href="https://maps.app.goo.gl/5UXo6iYuGzcuBvZe6" target="_blank">Google Maps</a></li>
+                    <li><span class="note-label">Bakery: Forno Brisa</span> <a class="note-link" href="https://www.fornobrisa.it/en/" target="_blank">fornobrisa.it</a></li>
+                    <li><span class="note-label">Dinner: Taverna del Postiglione</span> <a class="note-link" href="https://tavernadelpostiglione.it/prenotazioni/" target="_blank">tavernadelpostiglione.it</a></li>
+                </ul>
+
+                <h4>Venice</h4>
+                <ul>
+                    <li><span class="note-label">Vaporetto day pass</span> <span class="note-meta">Water bus covers all main spots. Things open late &mdash; don't rush.</span></li>
+                    <li><span class="note-label">Gondola rowing lesson</span> <a class="note-link" href="https://rowvenice.org/rv-venetian-rowing-lessons/" target="_blank">rowvenice.org</a></li>
+                    <li><span class="note-label">Private water taxi airport transfer</span> <span class="note-meta">Fixed price, ask hotel to book. Cool experience.</span></li>
+                </ul>
+
+                <h4>Amalfi Coast</h4>
+                <ul>
+                    <li>
+                        <span class="note-label">Traffic is crazy in Amalfi &mdash; use boats</span>
+                        <span class="note-meta">Dave suggests taking the train to Salerno then ferrying to whichever Amalfi town you stay in. Much easier than road.</span>
+                    </li>
+                </ul>
+
+                <h4>General Italy Tips</h4>
+                <ul>
+                    <li><span class="note-label">Prep kids for lots of walking</span> <span class="note-meta">Especially Rome. Comfortable shoes essential.</span></li>
+                    <li><span class="note-label">Follow "Untold Italy" on Facebook</span> <span class="note-meta">Great resources, tips and podcast.</span></li>
+                    <li><span class="note-label">Book accommodation via booking.com with Shopback</span> <span class="note-meta">Extra 10-15% cashback via shopback.com.au</span></li>
+                    <li><span class="note-label">Italian trains: Trainline for planning, Trenitalia to book direct</span> <a class="note-link" href="https://www.thetrainline.com/" target="_blank">thetrainline.com</a></li>
+                    <li><span class="note-label">Wanderlog app</span> <span class="note-meta">Free app for tracking &amp; changing itinerary, getting ideas for each town.</span> <a class="note-link" href="https://wanderlog.com/" target="_blank">wanderlog.com</a></li>
+                </ul>
+            </div>
+
+            <!-- SUGGESTED ACTIVITIES -->
+            <div class="notes-panel full-width">
+                <h3><span class="panel-icon">&#x1f31f;</span> Suggested Activities (Not in Itinerary)</h3>
+                <p class="tip-source">Ideas from Dave's trip and other research &mdash; consider adding these to free slots</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px;">
+                    <div>
+                        <h4>Rome</h4>
+                        <ul>
+                            <li>
+                                <span class="note-label">Cooking class &mdash; Eat &amp; Walk Italy</span>
+                                <span class="note-meta">Make pasta &amp; tiramisu from scratch. Kids loved it. Could fit Day 15 afternoon or Day 16 evening.</span>
+                                <a class="note-link" href="https://www.eatandwalkitaly.it/cooking-classes-rome/" target="_blank">eatandwalkitaly.it</a>
+                            </li>
+                            <li>
+                                <span class="note-label">Dar Poeta pizza dinner</span>
+                                <span class="note-meta">Dave's top Rome pizza pick. Great Trastevere option for Day 17 dinner.</span>
+                            </li>
+                            <li>
+                                <span class="note-label">Trattoria Luzzi dinner</span>
+                                <span class="note-meta">Near Colosseum &mdash; perfect for Day 16 dinner after Forum visit.</span>
+                            </li>
+                        </ul>
+
+                        <h4>Bologna</h4>
+                        <ul>
+                            <li>
+                                <span class="note-label">Full-day Food &amp; Wine Tour</span>
+                                <span class="note-meta">Parmesan, balsamic &amp; prosciutto factories + feast. Would replace Day 14 activities. Book via italiandays.it.</span>
+                                <a class="note-link" href="https://www.italiandays.it/" target="_blank">italiandays.it</a>
+                            </li>
+                            <li>
+                                <span class="note-label">Portico of St Luke walk / tourist train</span>
+                                <span class="note-meta">666 arches up a mountain. Could fit morning of Day 14 before the food market.</span>
+                                <a class="note-link" href="https://cityredbus.com/en/san-luca-express/" target="_blank">San Luca Express</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Venice</h4>
+                        <ul>
+                            <li>
+                                <span class="note-label">Gondola rowing lesson</span>
+                                <span class="note-meta">Learn to row a gondola as a family instead of just riding. Could fit Day 12 afternoon.</span>
+                                <a class="note-link" href="https://rowvenice.org/rv-venetian-rowing-lessons/" target="_blank">rowvenice.org</a>
+                            </li>
+                        </ul>
+
+                        <h4>Paris</h4>
+                        <ul>
+                            <li>
+                                <span class="note-label">Sainte-Chapelle &amp; Conciergerie combo</span>
+                                <span class="note-meta">Already visiting Sainte-Chapelle on Day 10 &mdash; the Conciergerie is right next door and only takes 30 min extra.</span>
+                            </li>
+                        </ul>
+
+                        <h4>Amalfi Coast</h4>
+                        <ul>
+                            <li>
+                                <span class="note-label">Path of the Gods hike (Sentiero degli Dei)</span>
+                                <span class="note-meta">Spectacular clifftop walk from Agerola to Positano. Could fit Day 19 morning if the family is up for it.</span>
+                            </li>
+                            <li>
+                                <span class="note-label">Limoncello tasting in Sorrento</span>
+                                <span class="note-meta">For the adults &mdash; many places offer free tastings along the main streets. Day 20 afternoon.</span>
+                            </li>
+                        </ul>
+
+                        <h4>Cinque Terre (not currently in itinerary)</h4>
+                        <ul>
+                            <li>
+                                <span class="note-label">Dave strongly recommends Cinque Terre</span>
+                                <span class="note-meta">5 coastal towns, walks between them, pesto cooking class in Manarola. Would require reworking schedule &mdash; not currently included.</span>
+                                <a class="note-link" href="https://www.nessundormacinqueterre.com/pestoexperience" target="_blank">Pesto class booking</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <script>
-(function() {
-  "use strict";
+// Shrink header on scroll
+window.addEventListener('scroll', () => {
+    document.querySelector('.header').classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
 
-  var canvas = document.getElementById("gameCanvas");
-  var ctx = canvas.getContext("2d");
-  var W, H, dpr;
-  var TOOLBOX_H = 130, TOPBAR_H = 44, HOLE_SIZE = 28;
+function toggleMapsMenu(e) {
+    e.stopPropagation();
+    document.getElementById('maps-dropdown').classList.toggle('open');
+}
+function closeMapsMenu() {
+    document.getElementById('maps-dropdown').classList.remove('open');
+}
+document.addEventListener('click', () => closeMapsMenu());
 
-  function resize() {
-    dpr = window.devicePixelRatio || 1;
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    traceLight();
-  }
-  window.addEventListener("resize", resize);
+// ============================================================
+// ITINERARY DATA - Edit this section to update your trip
+// ============================================================
+const tripData = {
+    title: "Europe Holiday 2026",
+    travellers: ["James", "Liv", "Sophie", "Jessica", "Fiona"],
+    currency: "GBP/EUR",
 
-  var currentLevel = 0;
-  var placedBlocks = [];
-  var selectedBlock = null;
-  var dragging = null;
-  var dragOffset = { x: 0, y: 0 };
-  var lightSegments = [];
-  var won = false;
-  var beamSource = { x: 0, y: 0 };
-  var holePos = { x: 0, y: 0, side: "top" };
-  var trayCards = [];
+    cities: [
+        { name: "London", lat: 51.5074, lng: -0.1278, region: "London" },
+        { name: "Paris", lat: 48.8566, lng: 2.3522, region: "Paris" },
+        { name: "Venice", lat: 45.4408, lng: 12.3155, region: "Venice & Bologna" },
+        { name: "Bologna", lat: 44.4949, lng: 11.3426, region: "Venice & Bologna" },
+        { name: "Rome", lat: 41.9028, lng: 12.4964, region: "Rome" },
+        { name: "Naples", lat: 40.8518, lng: 14.2681, region: "Amalfi Coast" },
+        { name: "Amalfi", lat: 40.6340, lng: 14.6027, region: "Amalfi Coast" },
+        { name: "Sorrento", lat: 40.6263, lng: 14.3758, region: "Amalfi Coast" },
+        { name: "Capri", lat: 40.5531, lng: 14.2222, region: "Amalfi Coast" },
+    ],
 
-  var BLOCK_DEFS = {
-    rect_s: { type: "rect", w: 65, h: 28, n: 1.5, label: "Rect S" },
-    rect_l: { type: "rect", w: 95, h: 32, n: 1.5, label: "Rect L" },
-    tri_s:  { type: "tri", size: 55, n: 1.8, label: "Prism S" },
-    tri_l:  { type: "tri", size: 80, n: 1.8, label: "Prism L" }
-  };
+    // Route for the map line (main cities in order)
+    route: [
+        { name: "London", lat: 51.5074, lng: -0.1278 },
+        { name: "Paris", lat: 48.8566, lng: 2.3522 },
+        { name: "Venice", lat: 45.4408, lng: 12.3155 },
+        { name: "Bologna", lat: 44.4949, lng: 11.3426 },
+        { name: "Rome", lat: 41.9028, lng: 12.4964 },
+        { name: "Naples/Amalfi", lat: 40.6340, lng: 14.6027 },
+        { name: "Rome", lat: 41.9028, lng: 12.4964 },
+    ],
 
-  var LEVELS = [
-    { beam: 0.5, hole: { side: "right", pos: 0.5 }, blocks: ["tri_s"] },
-    { beam: 0.3, hole: { side: "right", pos: 0.4 }, blocks: ["tri_s", "tri_s"] },
-    { beam: 0.7, hole: { side: "left", pos: 0.35 }, blocks: ["rect_l", "tri_s"] },
-    { beam: 0.5, hole: { side: "left", pos: 0.5 }, blocks: ["tri_s", "rect_s"] },
-    { beam: 0.2, hole: { side: "right", pos: 0.6 }, blocks: ["tri_s", "tri_l", "rect_s"] },
-    { beam: 0.8, hole: { side: "left", pos: 0.4 }, blocks: ["rect_l", "tri_l", "tri_s"] },
-    { beam: 0.35, hole: { side: "right", pos: 0.3 }, blocks: ["tri_l", "tri_l", "rect_s", "rect_l"] },
-    { beam: 0.6, hole: { side: "left", pos: 0.25 }, blocks: ["rect_s", "tri_s", "tri_l", "rect_l"] }
-  ];
+    transport: [
+        { date: "2026-06-18", type: "Flight", from: "Brisbane (BNE)", to: "Singapore (SIN)", details: "SQ246 depart 23:50, arrive 05:45+1 (7h55m)", ref: "EFLPC2", cost: "AUD $15,430.70 (total return)", status: "confirmed", carrier: "Singapore Airlines" },
+        { date: "2026-06-19", type: "Flight", from: "Singapore (SIN)", to: "London (LHR)", details: "SQ308 depart 09:00, arrive 15:45 (13h45m). Stopover 3h15m.", ref: "EFLPC2", cost: "", status: "confirmed", carrier: "Singapore Airlines" },
+        { date: "2026-06-26", type: "Eurostar", from: "London St Pancras", to: "Paris Gare du Nord", details: "Depart 13:31, arrive 16:59 (2h28m direct). Standard class, Coach 16, Seats 61-65. 5 pax.", ref: "GVJRYP", cost: "€589", status: "confirmed", carrier: "Eurostar" },
+        { date: "2026-06-29", type: "Flight", from: "Paris CDG", to: "Venice VCE", details: "Air France AF1526. Depart 18:40 (Terminal 2F), arrive 20:15. Economy, 5 pax. Check-in deadline 18:00.", ref: "Z8S84O", cost: "€511.50", status: "confirmed", carrier: "Air France" },
+        { date: "2026-07-01", type: "Train", from: "Venice", to: "Bologna", details: "11:00am departure, ~1hr 20min", ref: "", cost: "", status: "not-booked", carrier: "Trenitalia" },
+        { date: "2026-07-03", type: "Train", from: "Bologna", to: "Rome", details: "~10:00am departure, ~2hr", ref: "", cost: "", status: "not-booked", carrier: "Trenitalia" },
+        { date: "2026-07-05", type: "Train", from: "Rome", to: "Naples / Sorrento area", details: "Afternoon departure (post-Vatican). Frecciarossa to Naples + Circumvesuviana onward. ⚠ Bridge night accommodation TBC for Jul 5.", ref: "", cost: "", status: "not-booked", carrier: "Trenitalia / EAV" },
+        { date: "2026-07-06", type: "Train", from: "Sorrento/Naples", to: "Pompeii (Pompei Scavi)", details: "Circumvesuviana train (~30-35min). Visit Pompeii, then onward to Sorrento.", ref: "", cost: "", status: "not-booked", carrier: "EAV Circumvesuviana" },
+        { date: "2026-07-06", type: "Train", from: "Pompeii", to: "Sorrento", details: "Circumvesuviana train (~30min). Check in Casa Sofia from 15:00.", ref: "", cost: "", status: "not-booked", carrier: "EAV Circumvesuviana" },
+        { date: "2026-07-08", type: "Ferry", from: "Sorrento", to: "Capri (day trip)", details: "8-9am ferry out, 2-3pm ferry back. (MOVED from Jul 9 — Sorrento base allows day trip.)", ref: "", cost: "", status: "not-booked", carrier: "" },
+        { date: "2026-07-09", type: "Train/Transfer", from: "Sorrento", to: "Rome (airport area)", details: "Morning departure after 08:00 checkout. Circumvesuviana → Naples → Frecciarossa to Rome (~4-5h door-to-door).", ref: "", cost: "", status: "not-booked", carrier: "EAV / Trenitalia" },
+        { date: "2026-07-10", type: "Flight", from: "Rome (FCO)", to: "Singapore (SIN)", details: "SQ365 depart 11:40, arrive 06:00+1 (12h20m)", ref: "EFLPC2", cost: "", status: "confirmed", carrier: "Singapore Airlines" },
+        { date: "2026-07-11", type: "Flight", from: "Singapore (SIN)", to: "Brisbane (BNE)", details: "Stopover 1h20m, then onward to BNE", ref: "EFLPC2", cost: "", status: "confirmed", carrier: "Singapore Airlines" },
+    ],
 
-  function loadLevel(idx) {
-    currentLevel = idx % LEVELS.length;
-    var lv = LEVELS[currentLevel];
-    won = false;
-    placedBlocks = [];
-    selectedBlock = null;
-    dragging = null;
-    var pb = H - TOOLBOX_H;
-    beamSource = { x: W * lv.beam, y: pb - 2 };
-    var pa = pb - TOPBAR_H;
-    if (lv.hole.side === "top") {
-      holePos = { x: W * lv.hole.pos, y: TOPBAR_H, side: "top" };
-    } else if (lv.hole.side === "left") {
-      holePos = { x: 0, y: TOPBAR_H + pa * lv.hole.pos, side: "left" };
-    } else {
-      holePos = { x: W, y: TOPBAR_H + pa * lv.hole.pos, side: "right" };
-    }
-    document.getElementById("level-badge").textContent = "Level " + (currentLevel + 1);
-    document.getElementById("win-overlay").classList.remove("show");
-    buildTray(lv.blocks);
-    traceLight();
-  }
+    hotels: [
+        { city: "London", checkin: "2026-06-19", checkout: "2026-06-26", nights: 7, name: "London Flat - Islington", room: "Two-Bedroom Apartment, 22 Hilldrop Crescent, N7 0HU", ref: "5239515907", costPerNight: "AUD $397/night", status: "confirmed" },
+        { city: "Paris", checkin: "2026-06-26", checkout: "2026-06-29", nights: 3, name: "Souplex en Plein Coeur du Marais (Airbnb)", room: "Entire home/apt, 30 R. de Turbigo, 75003", ref: "HMCBHCJZBW", costPerNight: "AUD $365/night", status: "confirmed" },
+        { city: "Venice", checkin: "2026-06-29", checkout: "2026-07-01", nights: 2, name: "Attico Sospiri", room: "Two-Bedroom Apartment, Calle Seconda de la Fava, Castello", ref: "5572015092", costPerNight: "AUD $401/night", status: "confirmed" },
+        { city: "Bologna", checkin: "2026-07-01", checkout: "2026-07-03", nights: 2, name: "Barolo Apartment in the Heart of Bologna", room: "Two-Bedroom Apartment, Via Guglielmo Oberdan 15, 40126", ref: "6417671289", costPerNight: "€212/night (€424.47 total)", status: "confirmed" },
+        { city: "Rome", checkin: "2026-07-03", checkout: "2026-07-05", nights: 2, name: "Home d'Elite Sistina - Trevi Fountain", room: "Two-Bedroom Apartment, Via Sistina 125, 00187", ref: "6870532366", costPerNight: "€274.80/night (€549.60 total)", status: "confirmed" },
+        { city: "Naples / Sorrento area", checkin: "2026-07-05", checkout: "2026-07-06", nights: 1, name: "", room: "Bridge night between Rome checkout and Sorrento check-in", ref: "", costPerNight: "", status: "not-booked" },
+        { city: "Sorrento", checkin: "2026-07-06", checkout: "2026-07-09", nights: 3, name: "Casa Sofia", room: "Apartment, Via S Francesco 19, 80067 (door code entry)", ref: "6613032617", costPerNight: "AUD $629/night (AUD $1,886.65 total)", status: "confirmed" },
+        { city: "Rome (airport area)", checkin: "2026-07-09", checkout: "2026-07-10", nights: 1, name: "Rosa's House Rome Airport", room: "Standard Apartment, Via Cardinal Lambruschini 9, Fiumicino, 00054", ref: "6404037107", costPerNight: "€259.20 total (incl VAT) + €4 city tax pp/night", status: "confirmed" },
+    ],
 
-  function buildTray(keys) {
-    var tray = document.getElementById("block-tray");
-    tray.innerHTML = "";
-    trayCards = [];
-    for (var i = 0; i < keys.length; i++) {
-      var key = keys[i];
-      var def = BLOCK_DEFS[key];
-      var card = document.createElement("div");
-      card.className = "block-card " + (def.type === "rect" ? "rect" : "tri");
-      var svgContent;
-      if (def.type === "rect") {
-        svgContent = '<svg viewBox="0 0 32 32"><rect x="4" y="10" width="24" height="12" rx="1.5" fill="rgba(100,180,255,0.35)" stroke="rgba(100,180,255,0.8)" stroke-width="1.5"/></svg>';
-      } else {
-        svgContent = '<svg viewBox="0 0 32 32"><polygon points="16,5 29,27 3,27" fill="rgba(120,255,180,0.35)" stroke="rgba(120,255,180,0.8)" stroke-width="1.5"/></svg>';
-      }
-      card.innerHTML = svgContent + "<span>" + def.label + "</span>";
-      trayCards.push({ el: card, key: key, used: false, blockId: null });
-      tray.appendChild(card);
-    }
-  }
+    // Sections for sidebar grouping
+    sections: [
+        { label: "London", subtitle: "7 Days / 7 Nights", startDay: 0, color: "#e74c3c" },
+        { label: "Paris", subtitle: "3 Days / 3 Nights", startDay: 8, color: "#3498db" },
+        { label: "Venice & Bologna", subtitle: "4 Days / 4 Nights", startDay: 12, color: "#27ae60" },
+        { label: "Rome", subtitle: "3 Days / 2 Nights", startDay: 15, color: "#e67e22" },
+        { label: "Sorrento & Amalfi Coast", subtitle: "4 Days / 3 Nights (+1 transit)", startDay: 18, color: "#9b59b6" },
+        { label: "Journey Home", subtitle: "", startDay: 22, color: "#7f8c8d" },
+    ],
 
-  function markTrayUsed(idx, bid) {
-    if (trayCards[idx]) {
-      trayCards[idx].used = true;
-      trayCards[idx].blockId = bid;
-      trayCards[idx].el.classList.add("used");
-    }
-  }
+    days: [
+        // === DAY 0 - DEPARTURE ===
+        {
+            date: "2026-06-18", dayNum: 0, label: "Day 0 - Departure",
+            city: "Brisbane",
+            items: [
+                { time: "20:50", type: "transport", title: "Depart Brisbane (SQ246)", details: "Singapore Airlines to Singapore. Depart 23:50, arrive SIN 05:45+1. Ref: EFLPC2", ref: "EFLPC2", lat: -27.3842, lng: 153.1175, status: "confirmed" },
+            ]
+        },
+        // === LONDON ===
+        {
+            date: "2026-06-19", dayNum: 1, label: "Day 1",
+            city: "London - Arrival",
+            items: [
+                { time: "09:00", type: "transport", title: "Connect in Singapore (3h15m stopover)", details: "SQ308 departs 09:00, arrives London Heathrow 15:45 (13h45m)", ref: "EFLPC2", lat: 1.3644, lng: 103.9915, status: "confirmed" },
+                { time: "15:45", type: "transport", title: "Arrive London Heathrow", details: "Collect bags, customs. Transfer to Islington.", lat: 51.4700, lng: -0.4543, status: "confirmed" },
+                { time: "17:00", type: "hotel", title: "Check in - London Flat, Islington", details: "22 Hilldrop Crescent, Moelwyn Hughes Court, N7 0HU. Two-Bedroom Apartment. Check-in from 15:00.", ref: "5239515907", lat: 51.5540, lng: -0.1283, status: "confirmed" },
+                { time: "Evening", type: "activity", title: "Light Camden stroll + dinner", details: "Ease into the trip. Explore Camden Town.", lat: 51.5392, lng: -0.1426, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-20", dayNum: 2, label: "Day 2",
+            city: "London",
+            items: [
+                { time: "Morning", type: "activity", title: "Buckingham Palace", details: "Visited the iconic royal residence. Watched the Changing of the Guard ceremony.", lat: 51.5014, lng: -0.1419, status: "confirmed" },
+                { time: "Morning", type: "activity", title: "Horse Guards Parade", details: "Walked through Horse Guards Parade, the ceremonial parade ground in Whitehall.", lat: 51.5038, lng: -0.1272, status: "confirmed" },
+                { time: "Mid-Morning", type: "activity", title: "Big Ben & Westminster", details: "Saw the iconic Big Ben clock tower and the Palace of Westminster up close.", lat: 51.5007, lng: -0.1246, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "London Eye & Southbank", details: "Rode the London Eye with stunning views across the city. Strolled along the Southbank.", lat: 51.5033, lng: -0.1196, status: "confirmed" },
+                { time: "Late Afternoon", type: "activity", title: "Tate Modern", details: "Visited the Tate Modern gallery — free entry, world-class modern and contemporary art.", lat: 51.5076, lng: -0.0994, status: "confirmed" },
+                { time: "Late Afternoon", type: "activity", title: "Borough Market", details: "Explored Borough Market — one of London's oldest and most famous food markets.", lat: 51.5055, lng: -0.0910, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Dinner at Covent Garden", details: "Dinner in Covent Garden — great atmosphere with street performers.", lat: 51.5117, lng: -0.1240, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-21", dayNum: 3, label: "Day 3",
+            city: "London",
+            items: [
+                { time: "Morning", type: "activity", title: "St Paul's Cathedral", details: "Visited the iconic dome of St Paul's Cathedral — one of London's great landmarks.", lat: 51.5138, lng: -0.0984, status: "confirmed" },
+                { time: "Late Morning", type: "activity", title: "Leadenhall Market", details: "Explored the stunning Victorian covered market in the City — gorgeous ornate ironwork and a real hidden gem.", lat: 51.5128, lng: -0.0827, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Greenwich — Park, Prime Meridian, Queen's House & Cutty Sark", details: "Day out in Greenwich (where the family used to live!). Walked Greenwich Park, stood on the Prime Meridian line at the Royal Observatory, visited the Queen's House, and saw the Cutty Sark clipper ship.", lat: 51.4769, lng: -0.0005, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-22", dayNum: 4, label: "Day 4",
+            city: "London",
+            items: [
+                { time: "Morning", type: "activity", title: "Oxford Street Shopping", details: "Shopping along London's most famous high street.", lat: 51.5152, lng: -0.1418, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Westminster Abbey", details: "Visit the magnificent Gothic abbey — coronation church of British monarchs since 1066.", lat: 51.4994, lng: -0.1273, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-23", dayNum: 5, label: "Day 5",
+            city: "London",
+            items: [
+                { time: "Morning", type: "activity", title: "Tower of London", details: "Historic fortress — Crown Jewels, Beefeaters and 1,000 years of royal history.", lat: 51.5081, lng: -0.0759, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Science Museum", details: "Hands-on science and technology exhibits across seven floors.", lat: 51.4978, lng: -0.1745, status: "confirmed" },
+                { time: "Afternoon / Evening", type: "activity", title: "Harrods", details: "Iconic Knightsbridge department store — food hall, luxury shopping.", lat: 51.4994, lng: -0.1632, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-24", dayNum: 6, label: "Day 6",
+            city: "London",
+            items: [
+                { time: "Morning", type: "activity", title: "Natural History Museum", details: "World-class natural history collection — dinosaurs, blue whale skeleton, gemstone vault.", lat: 51.4967, lng: -0.1764, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "British Museum", details: "Ancient world treasures including the Rosetta Stone and Elgin Marbles.", lat: 51.5194, lng: -0.1270, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-25", dayNum: 7, label: "Day 7",
+            city: "London",
+            items: [
+                { time: "Full Day", type: "activity", title: "Windsor Castle", details: "Day trip to Windsor. Train from Waterloo (~1hr). State Apartments, St George's Chapel, and explore the town.", lat: 51.4839, lng: -0.6044, status: "confirmed" },
+            ]
+        },
+        // === LONDON TO PARIS ===
+        {
+            date: "2026-06-26", dayNum: 8, label: "Day 8",
+            city: "London to Paris",
+            items: [
+                { time: "Morning", type: "activity", title: "Madame Tussauds", details: "Wax museum. Book tickets in advance for skip-the-line.", lat: 51.5230, lng: -0.1544, status: "pending" },
+                { time: "12:00", type: "food", title: "Lunch near St Pancras", details: "Grab lunch before Eurostar departure. Be at station by 12:30 for check-in.", lat: 51.5322, lng: -0.1260, status: "confirmed" },
+                { time: "13:31", type: "transport", title: "Eurostar to Paris", details: "Depart St Pancras 13:31, arrive Paris Gare du Nord 16:59 (2h28m direct). Standard class, Coach 16, Seats 61-65. Ref: GVJRYP", ref: "GVJRYP", lat: 51.5322, lng: -0.1260, status: "confirmed" },
+                { time: "17:30", type: "hotel", title: "Check in - Souplex en Plein Coeur du Marais", details: "30 R. de Turbigo, 75003 Paris. Entire home/apt hosted by Mel. Check-in after 14:00. Host: +33 6 18 79 94 92", ref: "HMCBHCJZBW", lat: 48.8640, lng: 2.3540, status: "confirmed" },
+                { time: "Evening", type: "activity", title: "Dinner & Seine stroll", details: "First French meal! Evening walk along the Seine.", lat: 48.8566, lng: 2.3410, status: "confirmed" },
+            ]
+        },
+        // === PARIS ===
+        {
+            date: "2026-06-27", dayNum: 9, label: "Day 9",
+            city: "Paris",
+            items: [
+                { time: "Morning", type: "activity", title: "The Louvre & Notre-Dame", details: "Book timed Louvre entry. See Mona Lisa, Venus de Milo. Visit Notre-Dame restoration.", lat: 48.8606, lng: 2.3376, status: "pending" },
+                { time: "Afternoon", type: "activity", title: "Sainte-Chapelle, Tuileries & Arc de Triomphe", details: "Stunning stained glass at Sainte-Chapelle. Walk through Tuileries to Champs-Elysees & Arc de Triomphe.", lat: 48.8554, lng: 2.3451, status: "pending" },
+                { time: "Evening", type: "food", title: "Dinner", details: "", status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-28", dayNum: 10, label: "Day 10",
+            city: "Paris",
+            items: [
+                { time: "Morning", type: "activity", title: "Champ de Mars picnic & Seine River cruise", details: "Picnic at the park near the Eiffel Tower, then a scenic river cruise.", lat: 48.8556, lng: 2.2986, status: "pending" },
+                { time: "14:00", type: "activity", title: "Eiffel Tower — Top floor by lifts (BOOKED)", details: "5 tickets confirmed for Sun 28 Jun 2026 at 14:00. Top floor access by lift. 2 Adult + 2 Young (12-24) + 1 Child (4-11). €119.40 paid. Order #262010253232. QR codes on PDF tickets — download or print A4 (do NOT save to wallet). Bring IDs/age proof for reduced fares.", ref: "262010253232", lat: 48.8584, lng: 2.2945, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Dinner", details: "", status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-06-29", dayNum: 11, label: "Day 11",
+            city: "Paris to Venice",
+            items: [
+                { time: "Morning", type: "activity", title: "Montmartre", details: "Artists square, winding streets of the hilltop village.", lat: 48.8867, lng: 2.3431, status: "confirmed" },
+                { time: "11:00", type: "hotel", title: "Check out of Paris Airbnb", details: "Check-out by 11:00 AM", lat: 48.8640, lng: 2.3540, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Sacre-Coeur", details: "Stunning views over Paris from the steps of the basilica.", lat: 48.8867, lng: 2.3431, status: "confirmed" },
+                { time: "16:00", type: "transport", title: "Transfer to Paris CDG airport", details: "RER B from central Paris to CDG (~50 min). Check-in deadline 18:00.", lat: 49.0097, lng: 2.5479, status: "confirmed" },
+                { time: "18:40", type: "transport", title: "Flight to Venice (AF1526)", details: "Air France AF1526. Depart Paris CDG Terminal 2F at 18:40, arrive Venice VCE at 20:15. Economy. Ref: Z8S84O", ref: "Z8S84O", lat: 49.0097, lng: 2.5479, status: "confirmed" },
+                { time: "20:15", type: "transport", title: "Arrive Venice Marco Polo (VCE)", details: "Collect bags. Water taxi or Alilaguna water bus to accommodation in Castello.", lat: 45.5053, lng: 12.3519, status: "confirmed" },
+            ]
+        },
+        // === VENICE & BOLOGNA ===
+        {
+            date: "2026-06-30", dayNum: 12, label: "Day 12",
+            city: "Venice",
+            items: [
+                { time: "Morning", type: "hotel", title: "Attico Sospiri - checked in last night", details: "Calle Seconda de la Fava, 4298 5, Castello, 30122. Arrived ~21:00 last night via flight. Host: +393488254005", ref: "5572015092", lat: 45.4376, lng: 12.3407, status: "confirmed" },
+                { time: "Morning", type: "activity", title: "St Mark's Square & St Mark's Basilica", details: "Iconic square with the basilica, campanile, and cafes.", lat: 45.4343, lng: 12.3388, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Doge's Palace, Rialto Bridge & wander", details: "Doge's Palace tour. Cross the Rialto Bridge. Get lost in the narrow streets. Optional gondola ride.", lat: 45.4336, lng: 12.3401, status: "pending" },
+                { time: "Evening", type: "food", title: "Dinner by a canal", details: "Cicchetti (Venetian tapas) at a bacaro.", lat: 45.4381, lng: 12.3358, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-01", dayNum: 13, label: "Day 13",
+            city: "Venice to Bologna",
+            items: [
+                { time: "Morning", type: "activity", title: "Murano island - glass blowing", details: "Vaporetto to Murano to watch glass blowing demonstrations.", lat: 45.4585, lng: 12.3530, status: "confirmed" },
+                { time: "11:00", type: "transport", title: "Train to Bologna", details: "1hr 20min. (Note: 3hr 40min direct to Rome from Venice if skipping Bologna.)", lat: 45.4414, lng: 12.3212, status: "pending" },
+                { time: "15:00", type: "hotel", title: "Check in - Barolo Apartment", details: "Via Guglielmo Oberdan 15, 40126 Bologna. Two-Bedroom Apartment. Host phone: +39 334 942 5699 (alt +39 051 408 6259). Property will email check-in instructions. Check-in from 15:00, check-out by 10:30. Booking #6417671289, PIN 7957. €424.47 total. NOTE: Previous booking at B&B Attico Galliera (#6205797641) was cancelled free of charge on 15 May 2026.", ref: "6417671289", lat: 44.5025, lng: 11.3520, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Bologna - wander & Piazza Maggiore", details: "Explore the portico-lined streets. Piazza Maggiore is the heart of the city.", lat: 44.4938, lng: 11.3430, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Aperitivo in Bologna", details: "Bologna is the food capital of Italy. Don't miss the aperitivo tradition!", lat: 44.4938, lng: 11.3430, status: "confirmed" },
+            ]
+        },
+        // === ROME ===
+        {
+            date: "2026-07-02", dayNum: 14, label: "Day 14",
+            city: "Bologna",
+            items: [
+                { time: "Full Day", type: "activity", title: "Bologna Food & Wine Tour", details: "Full day tour via italiandays.it (Bologna Food and Wine Tour #1). Visit a parmesan cheese factory, balsamic vinegar factory, and prosciutto factory, followed by a huge feast with wine. Recommended by Dave Robertson. Book in advance!", lat: 44.4938, lng: 11.3430, status: "pending" },
+                { time: "Evening", type: "food", title: "Dinner - authentic Bolognese", details: "Tagliatelle al ragù (the real bolognese!), or gramigna with sausage. This is the place to eat it.", lat: 44.4938, lng: 11.3430, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-03", dayNum: 15, label: "Day 15",
+            city: "Bologna to Rome",
+            items: [
+                { time: "10:00", type: "transport", title: "Train to Rome", details: "~2 hours on Frecciarossa high-speed train.", lat: 44.5058, lng: 11.3428, status: "pending" },
+                { time: "14:00", type: "hotel", title: "Check in - Home d'Elite Sistina (UPDATED)", details: "Via Sistina 125, 00187 Rome (near Trevi Fountain). Two-Bedroom Apartment. Check-in from 14:00. Phone: +39 328 343 8181. Booking #6870532366, PIN 2777. UPDATED 15 May 2026: now 2 nights (Jul 3 → Jul 5), was 3 nights. €549.60 total. €6 city tax pp/night collected by property.", ref: "6870532366", lat: 41.9047, lng: 12.4864, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Trevi Fountain, Pantheon, Piazza Navona & Spanish Steps", details: "Walking tour of Rome's highlights. Throw a coin in Trevi Fountain!", lat: 41.9009, lng: 12.4833, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Dinner", details: "Pasta alla carbonara or cacio e pepe - you're in Rome!", lat: 41.9047, lng: 12.4864, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-04", dayNum: 16, label: "Day 16",
+            city: "Rome",
+            items: [
+                { time: "10:00", type: "activity", title: "Vatican Museums — Guided Tour (BOOKED)", details: "Arrive 10:00 at Viale Vaticano entrance — show voucher at reserved queue (right side, 30 min before tour). Tour starts 10:30. 5 pax. Booking code: 2L2N0NBD7WTNZPQHQ. Visit #265890/2026-9. Booked via museivaticani.va. Includes Sistine Chapel. Voucher valid for this date/time only — not modifiable.", ref: "2L2N0NBD7WTNZPQHQ", lat: 41.9065, lng: 12.4536, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Colosseum, Roman Forum & Palatine Hill", details: "Book combined ticket in advance. Allow 3+ hours. Colosseum open until 19:00 — afternoon visit works well after the Vatican morning.", lat: 41.8902, lng: 12.4922, status: "pending" },
+                { time: "Evening", type: "food", title: "Dinner", details: "", status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-05", dayNum: 17, label: "Day 17",
+            city: "Rome → Sorrento area",
+            items: [
+                { time: "Early Morning", type: "activity", title: "St Peter's Basilica & Castel Sant'Angelo", details: "Vatican Museums done yesterday (Jul 4). Free morning — St Peter's is free entry, optional dome climb. Walk to Castel Sant'Angelo.", lat: 41.9022, lng: 12.4539, status: "confirmed" },
+                { time: "10:00", type: "hotel", title: "Check out - Home d'Elite Sistina", details: "Check-out by 10:00. Leave bags at reception if returning before train.", lat: 41.9047, lng: 12.4864, status: "confirmed" },
+                { time: "Midday", type: "activity", title: "St Peter's Basilica (quick)", details: "Free entry to St Peter's. Optional dome climb. Then back to collect bags.", lat: 41.9022, lng: 12.4539, status: "confirmed" },
+                { time: "Afternoon", type: "transport", title: "Train Rome → Naples → Sorrento area", details: "Frecciarossa Rome to Naples (~1h10m), then Circumvesuviana to Sorrento (~1h). ⚠ ACCOMMODATION GAP: Casa Sofia check-in is tomorrow (Jul 6) from 15:00. Need 1-night booking near Naples/Sorrento for tonight — TBC.", lat: 41.9009, lng: 12.5015, status: "not-booked" },
+                { time: "Evening", type: "hotel", title: "1-night stay TBC", details: "⚠ Bridge night between Rome (out Jul 5 AM) and Casa Sofia (in Jul 6 PM). Options: book a hotel in Sorrento / Naples / Pompeii for Sun Jul 5, OR contact Casa Sofia host (+39 392 221 1200) to request early check-in.", status: "not-booked" },
+            ]
+        },
+        // === SORRENTO & AMALFI COAST (Casa Sofia base) ===
+        {
+            date: "2026-07-06", dayNum: 18, label: "Day 18",
+            city: "Pompeii → Sorrento (Casa Sofia)",
+            items: [
+                { time: "Morning", type: "transport", title: "Travel to Pompeii", details: "Circumvesuviana train to Pompei Scavi (~30min from Sorrento, ~35min from Naples).", lat: 40.7509, lng: 14.4869, status: "pending" },
+                { time: "Late Morning", type: "activity", title: "Visit Pompeii", details: "Explore the ancient ruins. Allow 2-3 hours. BOOK TICKETS IN ADVANCE.", lat: 40.7509, lng: 14.4869, status: "pending" },
+                { time: "Afternoon", type: "transport", title: "Circumvesuviana to Sorrento", details: "Pompei Scavi to Sorrento (~30min).", lat: 40.6263, lng: 14.3758, status: "pending" },
+                { time: "15:00", type: "hotel", title: "Check in - Casa Sofia, Sorrento", details: "Via S Francesco 19, 80067 Sorrento. Apartment with door code entry — host will send code. Check-in 15:00-19:00. Host phone: +39 392 221 1200. Booking #6613032617, PIN 0728. 3 nights, AUD $1,886.65 total. €4 city tax pp/night excluded. €40 service charge/stay included.", ref: "6613032617", lat: 40.6263, lng: 14.3758, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Dinner in Sorrento", details: "Bay of Naples sunset views.", lat: 40.6263, lng: 14.3758, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-07", dayNum: 19, label: "Day 19",
+            city: "Amalfi Coast day trip",
+            items: [
+                { time: "Morning", type: "transport", title: "SITA bus / ferry to Positano & Amalfi", details: "Day trip along the coast from Sorrento. Return same evening to Casa Sofia.", lat: 40.6281, lng: 14.4850, status: "pending" },
+                { time: "Late Morning", type: "activity", title: "Positano & Amalfi towns", details: "Explore the stunning cliffside town of Positano. Walk to Amalfi town.", lat: 40.6281, lng: 14.4850, status: "confirmed" },
+                { time: "Afternoon", type: "activity", title: "Beach time", details: "Relax on the beach. The girls will love it after all the sightseeing.", lat: 40.6340, lng: 14.6027, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Dinner with sea views (Sorrento)", details: "Return to Sorrento for dinner & overnight at Casa Sofia.", lat: 40.6263, lng: 14.3758, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-08", dayNum: 20, label: "Day 20",
+            city: "Capri day trip (from Sorrento)",
+            items: [
+                { time: "08:00", type: "transport", title: "Ferry to Capri", details: "8-9am ferry from Sorrento Marina Piccola to Capri.", lat: 40.6263, lng: 14.3758, status: "pending" },
+                { time: "Morning", type: "activity", title: "Explore Capri", details: "Blue Grotto (weather permitting), Piazzetta, Gardens of Augustus, chairlift to Monte Solaro.", lat: 40.5531, lng: 14.2222, status: "confirmed" },
+                { time: "14:00", type: "transport", title: "Ferry back to Sorrento", details: "2-3pm return ferry.", lat: 40.5531, lng: 14.2222, status: "pending" },
+                { time: "Afternoon", type: "activity", title: "Sorrento — limoncello tasting", details: "Wander the old town, limoncello tasting, last beach time.", lat: 40.6263, lng: 14.3758, status: "confirmed" },
+                { time: "Evening", type: "food", title: "Final Sorrento dinner", details: "Overnight at Casa Sofia.", lat: 40.6263, lng: 14.3758, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-09", dayNum: 21, label: "Day 21",
+            city: "Sorrento → Rome (airport area)",
+            items: [
+                { time: "08:00", type: "hotel", title: "Check out - Casa Sofia", details: "Check-out 08:00-09:30. Door code exit.", lat: 40.6263, lng: 14.3758, status: "confirmed" },
+                { time: "Morning", type: "transport", title: "Sorrento → Naples → Rome", details: "Circumvesuviana to Naples Centrale, then Frecciarossa to Rome (~1h10m). Allow ~4-5h door-to-door.", lat: 40.6263, lng: 14.3758, status: "pending" },
+                { time: "Afternoon", type: "activity", title: "Free afternoon near Rome / FCO area", details: "Light afternoon. Early dinner. Repack for flight tomorrow.", lat: 41.8003, lng: 12.2389, status: "pending" },
+                { time: "Evening", type: "hotel", title: "Check in - Rosa's House Rome Airport (CONFIRMED)", details: "Via Cardinal Lambruschini 9, Fiumicino, 00054. Standard Apartment. Check-in from 14:00. Phone: +39 375 620 2963. Booking #6404037107, PIN 9677. €259.20 total (incl VAT). €4 city tax pp/night excluded. Free cancellation until Jul 7. Booked by Olivia.", ref: "6404037107", lat: 41.7736, lng: 12.2425, status: "confirmed" },
+            ]
+        },
+        // === JOURNEY HOME ===
+        {
+            date: "2026-07-10", dayNum: 22, label: "Day 22 - Departure",
+            city: "Rome / In Transit",
+            items: [
+                { time: "07:30", type: "transport", title: "Airport transfer", details: "7:30-8:00am transfer to Fiumicino (FCO).", lat: 41.8003, lng: 12.2389, status: "pending" },
+                { time: "11:40", type: "transport", title: "Depart Rome (SQ365)", details: "Singapore Airlines to Singapore. Depart 11:40, arrive SIN 06:00+1. Stopover 1h20m then onward to BNE.", ref: "EFLPC2", lat: 41.8003, lng: 12.2389, status: "confirmed" },
+            ]
+        },
+        {
+            date: "2026-07-11", dayNum: 23, label: "Day 23 - Arrival",
+            city: "Brisbane",
+            items: [
+                { time: "Evening", type: "transport", title: "Arrive Brisbane", details: "Welcome home! What a trip.", ref: "EFLPC2", lat: -27.3842, lng: 153.1175, status: "confirmed" },
+            ]
+        },
+    ]
+};
 
-  function freeTraySlot(bid) {
-    for (var i = 0; i < trayCards.length; i++) {
-      if (trayCards[i].blockId === bid) {
-        trayCards[i].used = false;
-        trayCards[i].blockId = null;
-        trayCards[i].el.classList.remove("used");
-        break;
-      }
-    }
-  }
+// ============================================================
+// APP LOGIC
+// ============================================================
+let currentDay = 0;
+let map, fullMap;
+let dayMarkersLayer = null;
 
-  // === GEOMETRY ===
-  function rotPt(px, py, cx, cy, a) {
-    var c = Math.cos(a), s = Math.sin(a), dx = px - cx, dy = py - cy;
-    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
-  }
+function init() {
+    renderStats();
+    renderDayList();
+    renderDayDetails();
+    renderBookingsTables();
+    initMap();
+    selectDay(0);
+}
 
-  function getVerts(b) {
-    if (b.type === "rect") {
-      var hw = b.w / 2, hh = b.h / 2;
-      return [
-        rotPt(b.x - hw, b.y - hh, b.x, b.y, b.angle),
-        rotPt(b.x + hw, b.y - hh, b.x, b.y, b.angle),
-        rotPt(b.x + hw, b.y + hh, b.x, b.y, b.angle),
-        rotPt(b.x - hw, b.y + hh, b.x, b.y, b.angle)
-      ];
-    }
-    var h = b.size * Math.sqrt(3) / 2;
-    return [
-      rotPt(b.x, b.y - h * 2 / 3, b.x, b.y, b.angle),
-      rotPt(b.x + b.size / 2, b.y + h / 3, b.x, b.y, b.angle),
-      rotPt(b.x - b.size / 2, b.y + h / 3, b.x, b.y, b.angle)
+function renderStats() {
+    const totalDays = tripData.days.length;
+    const citySet = new Set();
+    tripData.days.forEach(d => {
+        const c = d.city.split(' to ')[0].split(' / ')[0].split(' - ')[0].trim();
+        if (c !== 'In Transit' && c !== 'Brisbane') citySet.add(c);
+    });
+    const totalActivities = tripData.days.reduce((s, d) => s + d.items.filter(i => i.type === 'activity').length, 0);
+    const totalNights = tripData.hotels.reduce((s, h) => s + h.nights, 0);
+
+    const stats = [
+        { value: totalDays, label: 'Days' },
+        { value: citySet.size, label: 'Destinations' },
+        { value: totalNights, label: 'Nights' },
+        { value: totalActivities, label: 'Activities' },
+        { value: tripData.transport.length, label: 'Transport Legs' },
     ];
-  }
+    document.getElementById('stats-row').innerHTML = stats.map(s =>
+        `<div class="stat-card"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`
+    ).join('');
+}
 
-  function getEdges(b) {
-    var v = getVerts(b);
-    var edges = [];
-    for (var i = 0; i < v.length; i++) {
-      edges.push({ p1: v[i], p2: v[(i + 1) % v.length] });
-    }
-    return edges;
-  }
+function renderDayList() {
+    const container = document.getElementById('day-list');
+    let html = '';
+    let sectionIdx = 0;
 
-  function segHit(a1, a2, b1, b2) {
-    var dx1 = a2.x - a1.x, dy1 = a2.y - a1.y;
-    var dx2 = b2.x - b1.x, dy2 = b2.y - b1.y;
-    var den = dx1 * dy2 - dy1 * dx2;
-    if (Math.abs(den) < 1e-12) return null;
-    var t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / den;
-    var u = ((b1.x - a1.x) * dy1 - (b1.y - a1.y) * dx1) / den;
-    if (t > 0.002 && t < 0.998 && u > 0.002 && u < 0.998) {
-      return { x: a1.x + t * dx1, y: a1.y + t * dy1, t: t };
-    }
-    return null;
-  }
+    tripData.days.forEach((day, i) => {
+        // Insert section divider
+        if (sectionIdx < tripData.sections.length && i === tripData.sections[sectionIdx].startDay) {
+            const sec = tripData.sections[sectionIdx];
+            html += `<div class="section-divider" style="background: linear-gradient(135deg, ${sec.color}, ${sec.color}dd);">
+                ${sec.label} ${sec.subtitle ? '<br><span style="font-size:0.75rem;font-weight:400;opacity:0.9">' + sec.subtitle + '</span>' : ''}
+            </div>`;
+            sectionIdx++;
+        }
 
-  function pip(px, py, verts) {
-    var inside = false;
-    for (var i = 0, j = verts.length - 1; i < verts.length; j = i++) {
-      var xi = verts[i].x, yi = verts[i].y, xj = verts[j].x, yj = verts[j].y;
-      if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
-        inside = !inside;
-      }
-    }
-    return inside;
-  }
+        const tags = [];
+        if (day.items.some(i => i.type === 'transport')) tags.push('<span class="tag transport">Travel</span>');
+        if (day.items.some(i => i.type === 'hotel')) tags.push('<span class="tag hotel">Hotel</span>');
+        const ac = day.items.filter(i => i.type === 'activity').length;
+        if (ac) tags.push(`<span class="tag">${ac} activities</span>`);
 
-  function vNorm(v) {
-    var l = Math.sqrt(v.x * v.x + v.y * v.y);
-    return l > 0 ? { x: v.x / l, y: v.y / l } : { x: 0, y: 0 };
-  }
+        html += `<div class="day-card" id="day-card-${i}" onclick="selectDay(${i})">
+            <div class="day-num">${day.label}</div>
+            <div class="day-date">${formatDate(day.date)}</div>
+            <div class="day-location">${day.city}</div>
+            <div class="day-overview">${tags.join('')}</div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
 
-  function vDot(a, b) { return a.x * b.x + a.y * b.y; }
+// Pre-compute global pin numbers for all items across all days
+let globalPinNumbers = []; // globalPinNumbers[dayIdx][itemIdx] = global pin number or null
 
-  function reflectV(d, n) {
-    var dn = vDot(d, n);
-    return { x: d.x - 2 * dn * n.x, y: d.y - 2 * dn * n.y };
-  }
-
-  function refractV(d, n, n1, n2) {
-    var cosI = -vDot(d, n);
-    var nrm = { x: n.x, y: n.y };
-    var ni = n1, nt = n2;
-    if (cosI < 0) {
-      cosI = -cosI;
-      nrm = { x: -nrm.x, y: -nrm.y };
-      ni = n2;
-      nt = n1;
-    }
-    var r = ni / nt;
-    var sinT2 = r * r * (1 - cosI * cosI);
-    if (sinT2 > 1.0) return null;
-    var cosT = Math.sqrt(Math.max(0, 1 - sinT2));
-    return {
-      x: r * d.x + (r * cosI - cosT) * nrm.x,
-      y: r * d.y + (r * cosI - cosT) * nrm.y
-    };
-  }
-
-  // === LIGHT TRACING ===
-  function traceLight() {
-    lightSegments = [];
-    if (!W || !H) return;
-    var pb = H - TOOLBOX_H;
-    var origin = { x: beamSource.x, y: beamSource.y };
-    var dir = { x: 0, y: -1 };
-
-    var walls = [
-      { p1: { x: 0, y: TOPBAR_H }, p2: { x: W, y: TOPBAR_H } },
-      { p1: { x: 0, y: pb }, p2: { x: W, y: pb } },
-      { p1: { x: 0, y: TOPBAR_H }, p2: { x: 0, y: pb } },
-      { p1: { x: W, y: TOPBAR_H }, p2: { x: W, y: pb } }
-    ];
-
-    for (var bounce = 0; bounce < 40; bounce++) {
-      var far = { x: origin.x + dir.x * 3000, y: origin.y + dir.y * 3000 };
-      var best = null, bestDist = Infinity, bestBlock = null, bestEdge = null;
-
-      for (var bi = 0; bi < placedBlocks.length; bi++) {
-        var edges = getEdges(placedBlocks[bi]);
-        for (var ei = 0; ei < edges.length; ei++) {
-          var hit = segHit(origin, far, edges[ei].p1, edges[ei].p2);
-          if (hit) {
-            var d = Math.sqrt((hit.x - origin.x) * (hit.x - origin.x) + (hit.y - origin.y) * (hit.y - origin.y));
-            if (d > 1 && d < bestDist) {
-              bestDist = d; best = hit; bestBlock = placedBlocks[bi]; bestEdge = edges[ei];
+function computeGlobalPins() {
+    globalPinNumbers = [];
+    let counter = 0;
+    tripData.days.forEach((day) => {
+        const dayPins = [];
+        day.items.forEach(item => {
+            if (item.lat && item.lng) {
+                counter++;
+                dayPins.push(counter);
+            } else {
+                dayPins.push(null);
             }
-          }
+        });
+        globalPinNumbers.push(dayPins);
+    });
+}
+
+// Find the accommodation for a given date from the hotels array
+function getAccommodationForDate(dateStr) {
+    return tripData.hotels.find(h => {
+        return dateStr >= h.checkin && dateStr < h.checkout;
+    });
+}
+
+// Accommodation coordinates lookup (from hotel city)
+const accomCoords = {
+    "London": { lat: 51.5540, lng: -0.1283, label: "London Flat, Islington" },
+    "Paris": { lat: 48.8640, lng: 2.3540, label: "Souplex, Le Marais" },
+    "Venice": { lat: 45.4376, lng: 12.3407, label: "Attico Sospiri, Castello" },
+    "Bologna": { lat: 44.5015, lng: 11.3420, label: "B&B Attico Galliera" },
+    "Rome": { lat: 41.9047, lng: 12.4864, label: "Home d'Elite Sistina" },
+    "Amalfi Coast": { lat: 40.6340, lng: 14.6027, label: "Amalfi Coast accommodation" },
+    "Sorrento": { lat: 40.6263, lng: 14.3758, label: "Sorrento accommodation" },
+    "Rome (airport area)": { lat: 41.7736, lng: 12.2425, label: "Rosa's House Rome Airport" },
+};
+
+function renderDayDetails() {
+    computeGlobalPins();
+    const container = document.getElementById('day-details');
+    container.innerHTML = tripData.days.map((day, i) => {
+        const accom = getAccommodationForDate(day.date);
+        const accomLabel = accom ? (accom.name || accom.city + ' (TBD)') : null;
+
+        const timeline = day.items.map((item, j) => {
+            const pinNum = globalPinNumbers[i][j];
+            return `
+            <div class="timeline-item ${item.type}" onclick="selectDay(${i})" style="cursor:pointer">
+                <div class="item-header">
+                    <span class="item-time">${item.time}</span>
+                    <span style="display:flex;gap:6px;align-items:center">
+                        ${item.status ? `<span class="item-status ${item.status}">${item.status}</span>` : ''}
+                        <span class="item-type ${item.type}">${item.type}</span>
+                    </span>
+                </div>
+                <div class="item-title-row">
+                    ${pinNum ? `<span class="pin-number">${pinNum}</span>` : ''}
+                    <div class="item-title">${item.title}</div>
+                </div>
+                <div class="item-details">${item.details}${item.ref ? ` <span class="booking-ref">${item.ref}</span>` : ''}</div>
+                ${item.cost ? `<div class="item-cost">${item.cost}</div>` : ''}
+            </div>
+        `}).join('');
+
+        return `<div class="day-detail" id="day-detail-${i}">
+            <div class="day-header" onclick="selectDay(${i})">
+                <h2>${day.label} - ${formatDate(day.date)}</h2>
+                <div class="location">${day.city}</div>
+                ${accomLabel ? `<div class="accom-badge">&#x1f3e0; Staying: ${accomLabel}</div>` : ''}
+            </div>
+            <div class="timeline">${timeline}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderBookingsTables() {
+    const tbody1 = document.querySelector('#transport-table tbody');
+    tbody1.innerHTML = tripData.transport.map(t => `
+        <tr>
+            <td>${formatDate(t.date)}</td>
+            <td>${t.type}</td>
+            <td>${t.from} &rarr; ${t.to}</td>
+            <td>${t.details}</td>
+            <td>${t.ref ? `<span class="booking-ref">${t.ref}</span>` : '-'}</td>
+            <td><span class="status ${t.status}">${t.status.replace('-', ' ')}</span></td>
+        </tr>
+    `).join('');
+
+    const tbody2 = document.querySelector('#hotel-table tbody');
+    tbody2.innerHTML = tripData.hotels.map(h => `
+        <tr>
+            <td>${formatDate(h.checkin)} - ${formatDate(h.checkout)} (${h.nights}n)</td>
+            <td>${h.name || 'TBD'}</td>
+            <td>${h.city}</td>
+            <td>${h.room}</td>
+            <td>${h.ref ? `<span class="booking-ref">${h.ref}</span>` : '-'}</td>
+            <td><span class="status ${h.status}">${h.status.replace('-', ' ')}</span></td>
+        </tr>
+    `).join('');
+}
+
+function initMap() {
+    map = L.map('map').setView([46, 8], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const routeCoords = tripData.route.map(c => [c.lat, c.lng]);
+    L.polyline(routeCoords, { color: '#e74c3c', weight: 3, dashArray: '8 6', opacity: 0.7 }).addTo(map);
+
+    // Main city markers (deduplicated)
+    const seen = new Set();
+    tripData.route.forEach((city, i) => {
+        if (seen.has(city.name)) return;
+        seen.add(city.name);
+        L.circleMarker([city.lat, city.lng], {
+            radius: 8, fillColor: '#e74c3c', color: '#fff', weight: 2, fillOpacity: 0.9
+        }).addTo(map).bindPopup(`<strong>${city.name}</strong>`);
+    });
+
+    map.fitBounds(L.polyline(routeCoords).getBounds().pad(0.1));
+}
+
+function makeNumberedIcon(num, color, size, opacity) {
+    return L.divIcon({
+        className: 'numbered-pin',
+        html: `<div style="
+            background: ${color}; color: white; width: ${size}px; height: ${size}px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: ${size < 24 ? 10 : 13}px; font-weight: 700; border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35); opacity: ${opacity};
+        ">${num}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+        popupAnchor: [0, -size/2]
+    });
+}
+
+function makeAccomIcon() {
+    return L.divIcon({
+        className: 'accom-pin',
+        html: `<div style="
+            background: #27ae60; color: white; width: 32px; height: 32px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        ">&#x1f3e0;</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18]
+    });
+}
+
+function addDayPinsToMap(dayIdx, layer, isCurrent) {
+    const typeColors = { transport: '#f39c12', hotel: '#27ae60', activity: '#3498db', food: '#e74c3c' };
+    const day = tripData.days[dayIdx];
+    const size = isCurrent ? 28 : 20;
+    const opacity = isCurrent ? 1 : 0.5;
+
+    day.items.forEach((item, j) => {
+        const pinNum = globalPinNumbers[dayIdx][j];
+        if (!pinNum) return;
+        const color = typeColors[item.type] || '#3498db';
+        const icon = makeNumberedIcon(pinNum, color, size, opacity);
+        const dayLabel = isCurrent ? '' : `<br><span style="font-size:0.75em;color:#95a5a6">${day.label}</span>`;
+        L.marker([item.lat, item.lng], { icon, zIndexOffset: isCurrent ? 1000 : 0 })
+            .addTo(layer)
+            .bindPopup(`<strong>${pinNum}. ${item.title}</strong><br><span style="color:#7f8c8d">${item.time}</span>${dayLabel}`);
+    });
+}
+
+function selectDay(index) {
+    currentDay = index;
+
+    // Update sidebar
+    document.querySelectorAll('.day-card').forEach(el => el.classList.remove('active'));
+    document.getElementById(`day-card-${index}`).classList.add('active');
+    document.getElementById(`day-card-${index}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Update detail panel - highlight selected, dim others
+    document.querySelectorAll('.day-detail').forEach(el => el.classList.remove('selected'));
+    document.getElementById(`day-detail-${index}`).classList.add('selected');
+
+    // Scroll detail panel to selected day
+    const detailEl = document.getElementById(`day-detail-${index}`);
+    const container = document.getElementById('day-details');
+    container.scrollTo({ top: detailEl.offsetTop - container.offsetTop, behavior: 'smooth' });
+
+    // === MAP UPDATE ===
+    if (dayMarkersLayer) map.removeLayer(dayMarkersLayer);
+    dayMarkersLayer = L.layerGroup().addTo(map);
+
+    const day = tripData.days[index];
+    const typeColors = { transport: '#f39c12', hotel: '#27ae60', activity: '#3498db', food: '#e74c3c' };
+
+    // Add adjacent day pins (prev and next) - dimmed
+    if (index > 0) addDayPinsToMap(index - 1, dayMarkersLayer, false);
+    if (index < tripData.days.length - 1) addDayPinsToMap(index + 1, dayMarkersLayer, false);
+
+    // Add selected day pins - full
+    addDayPinsToMap(index, dayMarkersLayer, true);
+
+    // Always add accommodation pin for the selected day
+    const accom = getAccommodationForDate(day.date);
+    let accomLatLng = null;
+    if (accom) {
+        const coords = accomCoords[accom.city];
+        if (coords) {
+            accomLatLng = [coords.lat, coords.lng];
+            // Only add if not already a hotel check-in item on this day
+            const hasHotelItem = day.items.some(i => i.type === 'hotel' && i.lat && i.lng);
+            if (!hasHotelItem) {
+                const icon = makeAccomIcon();
+                L.marker(accomLatLng, { icon, zIndexOffset: 500 })
+                    .addTo(dayMarkersLayer)
+                    .bindPopup(`<strong>&#x1f3e0; ${coords.label}</strong><br><span style="color:#7f8c8d">Your accommodation</span>`);
+            }
         }
-      }
-
-      for (var wi = 0; wi < walls.length; wi++) {
-        var whit = segHit(origin, far, walls[wi].p1, walls[wi].p2);
-        if (whit) {
-          var wd = Math.sqrt((whit.x - origin.x) * (whit.x - origin.x) + (whit.y - origin.y) * (whit.y - origin.y));
-          if (wd > 1 && wd < bestDist) {
-            bestDist = wd; best = whit; bestBlock = null; bestEdge = walls[wi];
-          }
-        }
-      }
-
-      if (!best) {
-        lightSegments.push({ from: origin, to: far, inside: false });
-        break;
-      }
-
-      var probe = { x: origin.x + dir.x * 3, y: origin.y + dir.y * 3 };
-      var insideBlock = null;
-      for (var pi = 0; pi < placedBlocks.length; pi++) {
-        if (pip(probe.x, probe.y, getVerts(placedBlocks[pi]))) {
-          insideBlock = placedBlocks[pi];
-          break;
-        }
-      }
-
-      lightSegments.push({ from: origin, to: best, inside: !!insideBlock });
-
-      if (!bestBlock) break;
-
-      var eDir = vNorm({ x: bestEdge.p2.x - bestEdge.p1.x, y: bestEdge.p2.y - bestEdge.p1.y });
-      var normal = { x: -eDir.y, y: eDir.x };
-      if (vDot(dir, normal) > 0) {
-        normal = { x: -normal.x, y: -normal.y };
-      }
-
-      var entering = !insideBlock || insideBlock.id !== bestBlock.id;
-      var n1 = entering ? 1.0 : bestBlock.n;
-      var n2 = entering ? bestBlock.n : 1.0;
-
-      var refr = refractV(dir, normal, n1, n2);
-      if (refr) {
-        dir = vNorm(refr);
-      } else {
-        dir = vNorm(reflectV(dir, normal));
-      }
-      origin = { x: best.x + dir.x * 1.0, y: best.y + dir.y * 1.0 };
     }
 
-    checkWin();
-  }
-
-  function checkWin() {
-    if (won) return;
-    if (lightSegments.length === 0) return;
-    var last = lightSegments[lightSegments.length - 1];
-    var e = last.to;
-    var hit = false;
-    if (holePos.side === "top") hit = Math.abs(e.y - holePos.y) < 10 && Math.abs(e.x - holePos.x) < HOLE_SIZE;
-    if (holePos.side === "left") hit = Math.abs(e.x - holePos.x) < 10 && Math.abs(e.y - holePos.y) < HOLE_SIZE;
-    if (holePos.side === "right") hit = Math.abs(e.x - holePos.x) < 10 && Math.abs(e.y - holePos.y) < HOLE_SIZE;
-    if (hit) {
-      won = true;
-      setTimeout(function() {
-        document.getElementById("win-overlay").classList.add("show");
-      }, 500);
-    }
-  }
-
-  // === DRAWING ===
-  function draw(ts) {
-    ctx.clearRect(0, 0, W, H);
-    var pb = H - TOOLBOX_H;
-    var pulse = 0.7 + 0.3 * Math.sin((ts || 0) * 0.003);
-
-    ctx.fillStyle = "#0a0a14";
-    ctx.fillRect(0, 0, W, H);
-
-    // Grid dots
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
-    for (var gx = 20; gx < W; gx += 30) {
-      for (var gy = TOPBAR_H + 20; gy < pb; gy += 30) {
-        ctx.beginPath();
-        ctx.arc(gx, gy, 0.8, 0, Math.PI * 2);
-        ctx.fill();
-      }
+    // Fit map to selected day's pins (+ accommodation)
+    const selectedPins = day.items.filter(i => i.lat && i.lng).map(i => [i.lat, i.lng]);
+    if (accomLatLng && !day.items.some(i => i.type === 'hotel' && i.lat && i.lng)) {
+        selectedPins.push(accomLatLng);
     }
 
-    // Border
-    ctx.strokeStyle = "rgba(255,255,255,0.1)";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(0.5, TOPBAR_H + 0.5, W - 1, pb - TOPBAR_H - 1);
-
-    // Hole target
-    var hc = won ? "#40f080" : "#f0c040";
-    ctx.save();
-    var grd = ctx.createRadialGradient(holePos.x, holePos.y, 0, holePos.x, holePos.y, HOLE_SIZE * 2.5);
-    grd.addColorStop(0, (won ? "rgba(64,240,128," : "rgba(240,192,64,") + (0.25 * pulse) + ")");
-    grd.addColorStop(1, "transparent");
-    ctx.fillStyle = grd;
-    ctx.fillRect(holePos.x - 80, holePos.y - 80, 160, 160);
-    ctx.strokeStyle = hc;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = hc;
-    ctx.shadowBlur = 14 * pulse;
-    ctx.beginPath();
-    if (holePos.side === "top") {
-      ctx.moveTo(holePos.x - HOLE_SIZE, holePos.y);
-      ctx.lineTo(holePos.x + HOLE_SIZE, holePos.y);
+    if (selectedPins.length > 1) {
+        const bounds = L.latLngBounds(selectedPins);
+        map.fitBounds(bounds.pad(0.3), { animate: true, maxZoom: 14 });
+    } else if (selectedPins.length === 1) {
+        map.setView(selectedPins[0], 13, { animate: true });
     } else {
-      ctx.moveTo(holePos.x, holePos.y - HOLE_SIZE);
-      ctx.lineTo(holePos.x, holePos.y + HOLE_SIZE);
+        const cityName = day.city.split(' to ').pop().split(' / ')[0].split(' - ')[0].replace('Arrival', '').trim();
+        const city = tripData.route.find(c => cityName.includes(c.name)) || tripData.cities.find(c => cityName.includes(c.name));
+        if (city) map.setView([city.lat, city.lng], 10, { animate: true });
     }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = hc;
-    ctx.font = "bold 9px monospace";
-    ctx.textAlign = "center";
-    if (holePos.side === "top") {
-      ctx.fillText("TARGET", holePos.x, holePos.y + 14);
-    } else if (holePos.side === "left") {
-      ctx.save();
-      ctx.translate(holePos.x + 14, holePos.y);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText("TARGET", 0, 0);
-      ctx.restore();
-    } else {
-      ctx.save();
-      ctx.translate(holePos.x - 14, holePos.y);
-      ctx.rotate(Math.PI / 2);
-      ctx.fillText("TARGET", 0, 0);
-      ctx.restore();
+}
+
+function showView(view) {
+    document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+    document.querySelectorAll('.header-actions button').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (view === 'map' && !fullMap) {
+        setTimeout(() => {
+            fullMap = L.map('full-map').setView([46, 8], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(fullMap);
+            const routeCoords = tripData.route.map(c => [c.lat, c.lng]);
+            L.polyline(routeCoords, { color: '#e74c3c', weight: 3, dashArray: '8 6', opacity: 0.7 }).addTo(fullMap);
+            const seen = new Set();
+            tripData.route.forEach(city => {
+                if (seen.has(city.name)) return;
+                seen.add(city.name);
+                L.marker([city.lat, city.lng]).addTo(fullMap).bindPopup(`<strong>${city.name}</strong>`);
+            });
+            fullMap.fitBounds(L.polyline(routeCoords).getBounds().pad(0.1));
+        }, 100);
     }
-    ctx.restore();
+    if (view === 'itinerary') setTimeout(() => map.invalidateSize(), 100);
+}
 
-    // Light source
-    ctx.save();
-    var sg = ctx.createRadialGradient(beamSource.x, beamSource.y, 0, beamSource.x, beamSource.y, 20);
-    sg.addColorStop(0, "rgba(240,192,64,0.6)");
-    sg.addColorStop(1, "transparent");
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.arc(beamSource.x, beamSource.y, 20, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#f0c040";
-    ctx.beginPath();
-    ctx.arc(beamSource.x, beamSource.y, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.font = "bold 9px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("LIGHT", beamSource.x, beamSource.y + 18);
-    ctx.restore();
+function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+}
 
-    // Blocks
-    for (var bi = 0; bi < placedBlocks.length; bi++) {
-      var b = placedBlocks[bi];
-      var v = getVerts(b);
-      var isR = b.type === "rect";
-      var sel = selectedBlock && selectedBlock.id === b.id;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(v[0].x, v[0].y);
-      for (var vi = 1; vi < v.length; vi++) ctx.lineTo(v[vi].x, v[vi].y);
-      ctx.closePath();
-
-      var gf = ctx.createLinearGradient(v[0].x, v[0].y, v[v.length - 1].x, v[v.length - 1].y);
-      if (isR) {
-        gf.addColorStop(0, "rgba(100,180,255,0.12)");
-        gf.addColorStop(1, "rgba(100,180,255,0.22)");
-      } else {
-        gf.addColorStop(0, "rgba(120,255,180,0.12)");
-        gf.addColorStop(1, "rgba(120,255,180,0.22)");
-      }
-      ctx.fillStyle = gf;
-      ctx.fill();
-
-      ctx.strokeStyle = sel
-        ? (isR ? "rgba(100,180,255,1)" : "rgba(120,255,180,1)")
-        : (isR ? "rgba(100,180,255,0.45)" : "rgba(120,255,180,0.45)");
-      ctx.lineWidth = sel ? 2.5 : 1.5;
-      if (sel) {
-        ctx.shadowColor = isR ? "rgba(100,180,255,0.5)" : "rgba(120,255,180,0.5)";
-        ctx.shadowBlur = 10;
-      }
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      ctx.fillStyle = "rgba(255,255,255,0.45)";
-      ctx.font = "9px monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("n=" + b.n, b.x, b.y);
-      ctx.restore();
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    const params = new URLSearchParams(location.search);
+    const view = params.get('view');
+    if (view && ['itinerary', 'bookings', 'map', 'notes'].includes(view)) {
+        const btn = document.querySelector(`.header-actions button[onclick*="'${view}'"]`);
+        if (btn) btn.click();
     }
-
-    // Light beam
-    ctx.save();
-    for (var si = 0; si < lightSegments.length; si++) {
-      var seg = lightSegments[si];
-      ctx.beginPath();
-      ctx.moveTo(seg.from.x, seg.from.y);
-      ctx.lineTo(seg.to.x, seg.to.y);
-      ctx.strokeStyle = seg.inside ? "rgba(130,200,255,0.85)" : "rgba(240,192,64,0.85)";
-      ctx.lineWidth = seg.inside ? 2 : 2.5;
-      ctx.shadowColor = seg.inside ? "rgba(130,200,255,0.5)" : "rgba(240,192,64,0.5)";
-      ctx.shadowBlur = 10;
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-    for (var di = 1; di < lightSegments.length; di++) {
-      var pt = lightSegments[di].from;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-    }
-
-    if (won && lightSegments.length > 0) {
-      var last = lightSegments[lightSegments.length - 1];
-      var ld = vNorm({ x: last.to.x - last.from.x, y: last.to.y - last.from.y });
-      ctx.beginPath();
-      ctx.moveTo(last.to.x, last.to.y);
-      ctx.lineTo(last.to.x + ld.x * 60, last.to.y + ld.y * 60);
-      ctx.strokeStyle = "rgba(64,240,128,0.8)";
-      ctx.lineWidth = 3;
-      ctx.shadowColor = "rgba(64,240,128,0.6)";
-      ctx.shadowBlur = 16;
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    requestAnimationFrame(draw);
-  }
-
-  // === INTERACTION ===
-  var lastTapTime = 0, lastTapBlockId = null;
-
-  function blockAt(x, y) {
-    for (var i = placedBlocks.length - 1; i >= 0; i--) {
-      if (pip(x, y, getVerts(placedBlocks[i]))) return placedBlocks[i];
-    }
-    return null;
-  }
-
-  function hitTrayCard(x, y) {
-    for (var i = 0; i < trayCards.length; i++) {
-      if (trayCards[i].used) continue;
-      var r = trayCards[i].el.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
-    }
-    return -1;
-  }
-
-  function spawnFromTray(idx, x, y) {
-    var def = BLOCK_DEFS[trayCards[idx].key];
-    var pb = H - TOOLBOX_H;
-    var block = {
-      id: Date.now() + Math.random(),
-      key: trayCards[idx].key,
-      type: def.type,
-      x: x,
-      y: Math.min(y, pb - 40),
-      angle: 0,
-      n: def.n,
-      w: def.w || 0,
-      h: def.h || 0,
-      size: def.size || 0
-    };
-    placedBlocks.push(block);
-    markTrayUsed(idx, block.id);
-    dragging = block;
-    selectedBlock = block;
-    dragOffset = { x: 0, y: 0 };
-    traceLight();
-  }
-
-  function ptrDown(x, y) {
-    if (won) return;
-    var pb = H - TOOLBOX_H;
-
-    var ti = hitTrayCard(x, y);
-    if (ti >= 0) {
-      spawnFromTray(ti, x, y);
-      return;
-    }
-
-    if (y > pb) return;
-
-    var block = blockAt(x, y);
-    if (block) {
-      var now = Date.now();
-      if (lastTapBlockId === block.id && now - lastTapTime < 400) {
-        placedBlocks = placedBlocks.filter(function(b) { return b.id !== block.id; });
-        freeTraySlot(block.id);
-        selectedBlock = null;
-        dragging = null;
-        lastTapBlockId = null;
-        traceLight();
-        return;
-      }
-      lastTapTime = now;
-      lastTapBlockId = block.id;
-
-      if (selectedBlock && selectedBlock.id === block.id && !dragging) {
-        block.angle += Math.PI / 12;
-        traceLight();
-        return;
-      }
-
-      selectedBlock = block;
-      dragging = block;
-      dragOffset = { x: block.x - x, y: block.y - y };
-    } else {
-      selectedBlock = null;
-      lastTapBlockId = null;
-    }
-  }
-
-  function ptrMove(x, y) {
-    if (!dragging) return;
-    var pb = H - TOOLBOX_H;
-    dragging.x = Math.max(10, Math.min(W - 10, x + dragOffset.x));
-    dragging.y = Math.max(TOPBAR_H + 10, Math.min(pb - 10, y + dragOffset.y));
-    traceLight();
-  }
-
-  function ptrUp(x, y) {
-    if (dragging) {
-      var pb = H - TOOLBOX_H;
-      if (y > pb - 10) {
-        placedBlocks = placedBlocks.filter(function(b) { return b.id !== dragging.id; });
-        freeTraySlot(dragging.id);
-        selectedBlock = null;
-        traceLight();
-      }
-    }
-    dragging = null;
-  }
-
-  canvas.addEventListener("touchstart", function(e) {
-    e.preventDefault();
-    var t = e.touches[0];
-    ptrDown(t.clientX, t.clientY);
-  }, { passive: false });
-
-  canvas.addEventListener("touchmove", function(e) {
-    e.preventDefault();
-    var t = e.touches[0];
-    ptrMove(t.clientX, t.clientY);
-  }, { passive: false });
-
-  canvas.addEventListener("touchend", function(e) {
-    e.preventDefault();
-    var t = e.changedTouches[0];
-    ptrUp(t.clientX, t.clientY);
-  }, { passive: false });
-
-  canvas.addEventListener("mousedown", function(e) { ptrDown(e.clientX, e.clientY); });
-  canvas.addEventListener("mousemove", function(e) { if (dragging) ptrMove(e.clientX, e.clientY); });
-  canvas.addEventListener("mouseup", function(e) { ptrUp(e.clientX, e.clientY); });
-
-  var toolbox = document.getElementById("toolbox");
-  toolbox.addEventListener("touchstart", function(e) {
-    var t = e.touches[0];
-    var ti = hitTrayCard(t.clientX, t.clientY);
-    if (ti >= 0) {
-      e.preventDefault();
-      ptrDown(t.clientX, t.clientY);
-    }
-  }, { passive: false });
-
-  toolbox.addEventListener("touchmove", function(e) {
-    if (dragging) {
-      e.preventDefault();
-      var t = e.touches[0];
-      ptrMove(t.clientX, t.clientY);
-    }
-  }, { passive: false });
-
-  toolbox.addEventListener("touchend", function(e) {
-    if (dragging) {
-      e.preventDefault();
-      var t = e.changedTouches[0];
-      ptrUp(t.clientX, t.clientY);
-    }
-  }, { passive: false });
-
-  document.getElementById("btn-reset").addEventListener("click", function() { loadLevel(currentLevel); });
-  document.getElementById("btn-info").addEventListener("click", function() { document.getElementById("info-overlay").classList.add("show"); });
-  document.getElementById("btn-start").addEventListener("click", function() { document.getElementById("info-overlay").classList.remove("show"); });
-  document.getElementById("next-btn").addEventListener("click", function() { loadLevel(currentLevel + 1); });
-
-  resize();
-  loadLevel(0);
-  requestAnimationFrame(draw);
-})();
+});
 </script>
 </body>
 </html>
