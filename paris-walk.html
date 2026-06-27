@@ -383,7 +383,7 @@ STOPS.forEach((s,i)=>{
     <div class="stop-body">
       <h3>${s.name}</h3>
       <div class="where">${s.area}</div>
-      <img class="photo" loading="lazy" src="" id="img-${i}" alt="${s.name}">
+      <img class="photo" id="img-${i}" alt="${s.name}">
       <div class="infobar">
         <span class="chip status ${st.cls}"><span class="pip"></span>${st.txt}</span>
         <span class="chip">🕑 Sat <b>${hrsTxt}</b></span>
@@ -444,19 +444,20 @@ const WIKIS=[
   "Place du Tertre",
   "Sacré-Cœur Basilica, Paris"
 ];
-WIKIS.forEach(async(w,i)=>{
+STOPS.forEach((s,i)=>{
   const img=document.getElementById('img-'+i);
-  if(!img||!w)return;
-  try{
-    const url='https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(w)+'&prop=pageimages&format=json&pithumbsize=640&origin=*';
-    const r=await fetch(url);
-    if(!r.ok)return;
-    const d=await r.json();
-    const pages=d.query&&d.query.pages;
-    if(!pages)return;
-    const page=Object.values(pages)[0];
-    if(page&&page.thumbnail&&page.thumbnail.source){img.src=page.thumbnail.source;}
-  }catch(e){}
+  if(!img)return;
+  const w=WIKIS[i];
+  if(!w)return;
+  fetch('https://en.wikipedia.org/w/api.php?action=query&titles='+encodeURIComponent(w)+'&prop=pageimages&format=json&pithumbsize=800&origin=*')
+    .then(r=>r.json())
+    .then(d=>{
+      const pages=d&&d.query&&d.query.pages;
+      if(!pages)return;
+      const page=Object.values(pages)[0];
+      if(page&&page.thumbnail&&page.thumbnail.source){img.src=page.thumbnail.source;}
+    })
+    .catch(()=>{});
 });
 </script>
 </body>
